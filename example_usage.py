@@ -23,24 +23,28 @@ max_tokens = 5
 n = 1
 
 # Regular (sync) usage
-response = asyncio.run(monitored_completion.acreate(
-    engine=model,
-    prompt=prompt,
-    max_tokens=max_tokens,
-    n=n,
-    temperature=temperature,
-    MONA_additional_data={"customer_id": "A531251"},
-))
+response = asyncio.run(
+    monitored_completion.acreate(
+        engine=model,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        n=n,
+        temperature=temperature,
+        MONA_additional_data={"customer_id": "A531251"},
+    )
+)
 print(response.choices[0].text)
 
 # Async usage
-response = asyncio.run(monitored_completion.acreate(
-    engine=model,
-    prompt=prompt,
-    max_tokens=max_tokens,
-    n=n,
-    temperature=temperature,
-    MONA_additional_data={"customer_id": "A531251"},
-))
+response = asyncio.run(
+    monitored_completion.acreate(
+        engine=model,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        n=n,
+        temperature=temperature,
+        MONA_additional_data={"customer_id": "A531251"},
+    )
+)
 
 print(response.choices[0].text)
