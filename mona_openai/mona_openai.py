@@ -38,6 +38,10 @@ def _get_monitored_base_class(openai_class):
         raise WrongOpenAIClassException("Class not supported: " + class_name)
 
 
+# TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
+#   the specs param.
+
+
 def monitor(openai_class, mona_creds, context_class, specs=EMPTY_DICT):
     """
     Returns a Wrapped version of a given OpenAI class with mona
