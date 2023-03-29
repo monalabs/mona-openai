@@ -2,8 +2,10 @@
 Utility module for math-related functionality.
 """
 
+
 class InvalidQuotientssInputException(Exception):
     pass
+
 
 def get_quotients(iter_1, iter_2):
     """
@@ -14,4 +16,3 @@ def get_quotients(iter_1, iter_2):
     if len(iter_1) != len(iter_2):
         raise InvalidQuotientssInputException()
     return tuple(x / y if y != 0 else None for x, y in zip(iter_1, iter_2))
-    

@@ -26,6 +26,7 @@ ADDITIONAL_DATA_ARG_NAME = MONA_ARGS_PREFIX + "additional_data"
 #   filename instead of listing all options here.
 ENDPOINT_NAME_TO_WRAPPER = {COMPLETION_CLASS_NAME: get_completion_class}
 
+
 def _get_monitored_base_class(openai_class):
     """
     Returns a class that wrapps the given api class with that
@@ -38,12 +39,17 @@ def _get_monitored_base_class(openai_class):
     return ENDPOINT_NAME_TO_WRAPPER[class_name](openai_class)
 
 
-
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
 #   the specs param.
 
 
-def monitor(openai_class, mona_creds, context_class, specs=EMPTY_DICT, mona_clients_getter=get_mona_clients):
+def monitor(
+    openai_class,
+    mona_creds,
+    context_class,
+    specs=EMPTY_DICT,
+    mona_clients_getter=get_mona_clients,
+):
     """
     Returns a Wrapped version of a given OpenAI class with mona
     monitoring logic.

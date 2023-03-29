@@ -24,13 +24,13 @@ n = 1
 
 # Regular (sync) usage
 response = monitored_completion.create(
-        engine=model,
-        prompt=prompt,
-        max_tokens=max_tokens,
-        n=n,
-        temperature=temperature,
-        MONA_additional_data={"customer_id": "A531251"},
-    )
+    engine=model,
+    prompt=prompt,
+    max_tokens=max_tokens,
+    n=n,
+    temperature=temperature,
+    MONA_additional_data={"customer_id": "A531251"},
+)
 print(response.choices[0].text)
 
 # Async usage
