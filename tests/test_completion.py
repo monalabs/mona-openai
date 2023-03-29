@@ -19,12 +19,12 @@ from mona_openai.mona_openai import (
     EXPORT_TIMESTAMP_ARG_NAME,
     monitor,
 )
-from .fakes.fake_openai import (
-    FakeCreateException,
-    FakeCreateExceptionCommand,
-    get_fake_openai_class,
+from .mocks.mock_openai import (
+    mockCreateException,
+    mockCreateExceptionCommand,
+    get_mock_openai_class,
 )
-from .fakes.fake_mona_client import get_fake_mona_client
+from .mocks.mock_mona_client import get_mock_mona_clients_getter
 
 _DEFAULT_CONTEXT_CLASS = "TEST_CLASS"
 
@@ -81,11 +81,11 @@ _DEFAULT_ANALYSIS = {
         "prompt_word_count": 7,
         "answer_word_count": (3,),
         "prompt_preposition_count": 2,
-        "prompt_preposition_factor": 0.2857142857142857,
+        "prompt_preposition_ratio": 0.2857142857142857,
         "answer_preposition_count": (0,),
-        "answer_preposition_factor": (0.0,),
+        "answer_preposition_ratio": (0.0,),
         "answer_words_not_in_prompt_count": (3,),
-        "answer_words_not_in_prompt_factor": (1.0,),
+        "answer_words_not_in_prompt_ratio": (1.0,),
     },
     "profanity": {
         "prompt_profanity_prob": 0.05,
@@ -130,73 +130,59 @@ def _get_mona_message(
 
 def test_basic():
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client((_get_mona_message(),)),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(),),())
     ).create(**_DEFAULT_INPUT)
 
 
 def test_export_response_text():
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client(
-                (_get_mona_message(response=_DEFAULT_RESPONSE),)
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
         {"export_response_texts": True},
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(response=_DEFAULT_RESPONSE),),())
     ).create(**_DEFAULT_INPUT)
 
 
 def test_export_prompt():
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client((_get_mona_message(input=_DEFAULT_INPUT),)),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
         {"export_prompt": True},
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(input=_DEFAULT_INPUT),),())
     ).create(**_DEFAULT_INPUT)
 
 
 def test_bad_sampling_ratios():
     with pytest.raises(InvalidSamplingRatioException):
         monitor(
-            get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-            (
-                get_fake_mona_client((_get_mona_message(),)),
-                get_fake_mona_client(()),
-            ),
+            get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+            (),
             _DEFAULT_CONTEXT_CLASS,
             {"sampling_ratio": 1.1},
+            mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(),),())
         )
 
     with pytest.raises(InvalidSamplingRatioException):
         monitor(
-            get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-            (
-                get_fake_mona_client((_get_mona_message(),)),
-                get_fake_mona_client(()),
-            ),
+            get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+            (),
             _DEFAULT_CONTEXT_CLASS,
             {"sampling_ratio": -1},
+            mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(),),())
         )
 
 
 def test_async():
     monitored_completion = monitor(
-        get_fake_openai_class(Completion, (), (_DEFAULT_RESPONSE,)),
-        (
-            get_fake_mona_client(()),
-            get_fake_mona_client((_get_mona_message(is_async=True),)),
-        ),
+        get_mock_openai_class(Completion, (), (_DEFAULT_RESPONSE,)),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((),(_get_mona_message(is_async=True),))
     )
 
     asyncio.run(monitored_completion.acreate(**_DEFAULT_INPUT))
@@ -204,62 +190,46 @@ def test_async():
 
 def test_exception():
     monitored_completion = monitor(
-        get_fake_openai_class(Completion, (FakeCreateExceptionCommand(),), ()),
-        (
-            get_fake_mona_client(
-                (
-                    _get_mona_message(
-                        is_exception=True, response=None, analysis=None
-                    ),
-                )
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (mockCreateExceptionCommand(),), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(is_exception=True, response=None, analysis=None),),())
     )
 
-    with pytest.raises(FakeCreateException):
+    with pytest.raises(mockCreateException):
         monitored_completion.create(**_DEFAULT_INPUT)
 
 
 def test_exception_without_monitoring():
     monitored_completion = monitor(
-        get_fake_openai_class(Completion, (FakeCreateExceptionCommand(),), ()),
-        (
-            get_fake_mona_client(()),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (mockCreateExceptionCommand(),), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
         {"avoid_monitoring_exceptions": True},
+        mona_clients_getter=get_mock_mona_clients_getter((),())
     )
 
-    with pytest.raises(FakeCreateException):
+    with pytest.raises(mockCreateException):
         monitored_completion.create(**_DEFAULT_INPUT)
 
 
 def test_context_id():
     context_id = "some_context_id"
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client((_get_mona_message(context_id=context_id),)),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(context_id=context_id),),())
     ).create(**{**_DEFAULT_INPUT, CONTEXT_ID_ARG_NAME: context_id})
 
 
 def test_export_timestamp():
     export_timestamp = 1679244447
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client(
-                (_get_mona_message(export_timestamp=export_timestamp),)
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(export_timestamp=export_timestamp),),())
     ).create(**{**_DEFAULT_INPUT, EXPORT_TIMESTAMP_ARG_NAME: export_timestamp})
 
 
@@ -267,15 +237,11 @@ def test_no_profanity():
     expected_analysis = deepcopy(_DEFAULT_ANALYSIS)
     expected_analysis.pop("profanity")
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client(
-                (_get_mona_message(analysis=expected_analysis),)
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
         {"analysis": {"profanity": False}},
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(analysis=expected_analysis),),())
     ).create(**_DEFAULT_INPUT)
 
 
@@ -284,15 +250,11 @@ def test_no_textual_or_privacy():
     expected_analysis.pop("privacy")
     expected_analysis.pop("textual")
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client(
-                (_get_mona_message(analysis=expected_analysis),)
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
         {"analysis": {"privacy": False, "textual": False}},
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(analysis=expected_analysis),),())
     ).create(**_DEFAULT_INPUT)
 
 
@@ -339,11 +301,11 @@ def test_multiple_answers():
             "prompt_word_count": 7,
             "answer_word_count": (3, 3, 1),
             "prompt_preposition_count": 2,
-            "prompt_preposition_factor": 0.2857142857142857,
+            "prompt_preposition_ratio": 0.2857142857142857,
             "answer_preposition_count": (0, 0, 0),
-            "answer_preposition_factor": (0.0, 0.0, 0.0),
+            "answer_preposition_ratio": (0.0, 0.0, 0.0),
             "answer_words_not_in_prompt_count": (3, 3, 1),
-            "answer_words_not_in_prompt_factor": (1.0, 1.0, 1.0),
+            "answer_words_not_in_prompt_ratio": (1.0, 1.0, 1.0),
         },
         "profanity": {
             "prompt_profanity_prob": 0.05,
@@ -352,20 +314,12 @@ def test_multiple_answers():
     }
 
     monitor(
-        get_fake_openai_class(Completion, (new_response,), ()),
-        (
-            get_fake_mona_client(
-                (
-                    _get_mona_message(
-                        response=new_expected_response,
-                        input=expected_input,
-                        analysis=new_analysis,
-                    ),
-                )
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (new_response,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(response=new_expected_response,
+                        input=expected_input,
+                        analysis=new_analysis,),),())
     ).create(**new_input)
 
 
@@ -375,12 +329,8 @@ def test_additional_data():
     new_input["MONA_additional_data"] = additional_data
 
     monitor(
-        get_fake_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
-        (
-            get_fake_mona_client(
-                (_get_mona_message(additional_data=additional_data),)
-            ),
-            get_fake_mona_client(()),
-        ),
+        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        (),
         _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter((_get_mona_message(additional_data=additional_data),),())
     ).create(**new_input)

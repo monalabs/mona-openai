@@ -21,6 +21,10 @@ CONTEXT_ID_ARG_NAME = MONA_ARGS_PREFIX + "context_id"
 EXPORT_TIMESTAMP_ARG_NAME = MONA_ARGS_PREFIX + "export_timestamp"
 ADDITIONAL_DATA_ARG_NAME = MONA_ARGS_PREFIX + "additional_data"
 
+# TODO(Itai): This is essetially a nice-looking "switch" statement. We should
+#   try to use the name to find the exact monitoring-enrichment function and
+#   filename instead of listing all options here.
+ENDPOINT_NAME_TO_WRAPPER = {COMPLETION_CLASS_NAME: get_completion_class}
 
 def _get_monitored_base_class(openai_class):
     """
@@ -29,20 +33,17 @@ def _get_monitored_base_class(openai_class):
     """
     class_name = openai_class.__name__
 
-    # TODO(Itai): This is essetially a "switch" statement. We should try to
-    #   use the name to find the exact monitoring-enrichment function and not
-    #   just list all options.
-    if class_name == COMPLETION_CLASS_NAME:
-        return get_completion_class(openai_class)
-    else:
+    if class_name not in ENDPOINT_NAME_TO_WRAPPER:
         raise WrongOpenAIClassException("Class not supported: " + class_name)
+    return ENDPOINT_NAME_TO_WRAPPER[class_name](openai_class)
+
 
 
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
 #   the specs param.
 
 
-def monitor(openai_class, mona_creds, context_class, specs=EMPTY_DICT):
+def monitor(openai_class, mona_creds, context_class, specs=EMPTY_DICT, mona_clients_getter=get_mona_clients):
     """
     Returns a Wrapped version of a given OpenAI class with mona
     monitoring logic.
@@ -93,8 +94,9 @@ def monitor(openai_class, mona_creds, context_class, specs=EMPTY_DICT):
             monitoring. Use a name of your choice.
         specs: A dictionary of specifications such as monitoring
             sampling ratio.
+        mona_clients_getter: Used only for testing purposes
     """
-    client, async_client = get_mona_clients(mona_creds)
+    client, async_client = mona_clients_getter(mona_creds)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 

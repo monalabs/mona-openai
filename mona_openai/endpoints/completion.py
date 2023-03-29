@@ -21,9 +21,9 @@ def get_completion_class(openai_class):
         @classmethod
         def _get_analysis_params(cls, input, response, specs):
             return get_full_analysis(
-                input["prompt"],
-                tuple(choice["text"] for choice in response["choices"]),
-                specs,
+                prompt=input["prompt"],
+                answers=tuple(choice["text"] for choice in response["choices"]),
+                specs=specs,
             )
 
         @classmethod

@@ -9,6 +9,9 @@ def _raise_not_strings_exception():
         "Mona API key and secret should both be strings."
     )
 
+MONA_API_KEY_KEY = "key"
+MONA_API_SECRET_KEY = "secret"
+
 
 def get_mona_clients(creds):
     """
@@ -22,15 +25,12 @@ def get_mona_clients(creds):
             "There should be exactly two parts to Mona creds. API key and"
             " secret."
         )
-    if isinstance(creds[0], str):
-        if not isinstance(creds[1], str):
-            _raise_not_strings_exception()
-        return Client(creds[0], creds[1]), AsyncClient(creds[0], creds[1])
+    if isinstance(creds, dict):
+        if MONA_API_KEY_KEY not in creds or MONA_API_SECRET_KEY not in creds:
+            raise InvalidMonaCredsException(f"Mona creds dict should hold keys: {MONA_API_KEY_KEY}, {MONA_API_SECRET_KEY}")
+        return Client(creds[MONA_API_KEY_KEY], creds[MONA_API_SECRET_KEY]), AsyncClient(creds[MONA_API_KEY_KEY], creds[MONA_API_SECRET_KEY])
 
-    # For testing purposes, we allow sending the actual (probably fake) clients
-    # instead of the creds.
-    if not isinstance(creds[0], Client) or not isinstance(
-        creds[1], (Client, AsyncClient)
-    ):
+    if not isinstance(creds[0], str) or not isinstance(creds[1], str):
         _raise_not_strings_exception()
-    return creds
+
+    return Client(creds[0], creds[1]), AsyncClient(creds[0], creds[1])

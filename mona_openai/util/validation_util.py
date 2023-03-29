@@ -19,7 +19,8 @@ def validate_openai_class(openai_class, required_name):
 def validate_and_get_sampling_ratio(specs):
     """
     Validates that the sampling ratio in a given specs dict is a valid
-    number (between 0 and 1)
+    number (between 0 and 1). Returns a default value of 1 if no
+    sampling ratio is mentioned.
     """
     sampling_ratio = specs.get("sampling_ratio", 1)
     if sampling_ratio < 0 or sampling_ratio > 1:

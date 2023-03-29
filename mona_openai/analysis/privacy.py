@@ -18,6 +18,8 @@ EMAIL_RE_PATTERN = (
     r"-Z^-~]+)*|\[[\t -Z^-~]*])"
 )
 
+def _count_unknowns(prompt, answer, extract_func):
+    return len(extract_func(prompt) - extract_func(answer))
 
 def _extract_phone_numbers(prompt):
     """
@@ -40,12 +42,13 @@ def _count_unknown_phone_numbers(prompt, answer):
     Count the number of phone numbers that appear in the prompt but
     not in the input prompt.
     """
-    # Extract phone numbers from each prompt
-    return len(_extract_phone_numbers(prompt) - _extract_phone_numbers(answer))
+    return _count_unknowns(prompt,answer,_extract_phone_numbers)
 
 
 def _extract_all_emails(prompt):
-    """returns all email addresses found in the given prompt."""
+    """
+    returns all email addresses found in the given prompt.
+    """
     return set(re.findall(EMAIL_RE_PATTERN, prompt))
 
 
@@ -54,7 +57,7 @@ def _count_unknown_emails(prompt, answer):
     Returns the number of email addresses found in prompt and not in
     the answer param.
     """
-    return len(_extract_all_emails(prompt) - _extract_all_emails(answer))
+    return _count_unknowns(prompt,answer,_extract_all_emails)
 
 
 def get_full_privacy_analysis(prompt, answers):

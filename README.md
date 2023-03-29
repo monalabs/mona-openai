@@ -47,14 +47,14 @@ max_tokens = 5
 n = 1
 
 # Regular (sync) usage
-response = asyncio.run(monitored_completion.acreate(
+response = monitored_completion.create(
     engine=model,
     prompt=prompt,
     max_tokens=max_tokens,
     n=n,
     temperature=temperature,
     MONA_additional_data={"customer_id": "A531251"},
-))
+)
 print(response.choices[0].text)
 
 # Async usage
@@ -110,20 +110,20 @@ specs: A dictionary of specifications such as monitoring sampling ratio.
 
 #### Specs
 The specs arg allows you to configure what should be monitored. It expects a python dict with the follwoing possible keys:
-sampling_ratio (1): A number between 0 and 1 for how often should the call be logged.
-avoid_monitoring_exceptions (False): Whether or not to log out to Mona when there is an OpenAI exception. Default is to track exceptions - and Mona will alert you on things like a jump in number of exceptions
-export_prompt (False): Whether Mona should export the actual prompt text. Be default set to False to avoid privacy concerns.
-export_response_texts (False): Whether Mona should export the actual response texts. Be default set to False to avoid privacy concerns.
-analysis: A dictionary mapping each analysis type to a boolean value telling the client whether or not to run said analysis and log it to Mona. Possible options currently are "privacy", "profanity", and "textual". By default, all analyses take place and are logged out to Mona.
+* sampling_ratio (1): A number between 0 and 1 for how often should the call be logged.
+* avoid_monitoring_exceptions (False): Whether or not to log out to Mona when there is an OpenAI exception. Default is to track exceptions - and Mona will alert you on things like a jump in number of exceptions
+* export_prompt (False): Whether Mona should export the actual prompt text. Be default set to False to avoid privacy concerns.
+* export_response_texts (False): Whether Mona should export the actual response texts. Be default set to False to avoid privacy concerns.
+* analysis: A dictionary mapping each analysis type to a boolean value telling the client whether or not to run said analysis and log it to Mona. Possible options currently are "privacy", "profanity", and "textual". By default, all analyses take place and are logged out to Mona.
 
 ### on-going
 
 After wrapping your endpoint with `monitor`, you really don't need to do anything else. When using `create` or `acreate` data will be tracked and monitoring will take place.
 
 There are, however, several capabilities that are added to these functions. Specifically, you can add the following arguments to any create call:
-MONA_context_id: The unique id of the context in which the call is made. By using this ID you can export more data to Mona to the same context from other places. If not supplied, the "id" field of the OpenAI Endpoint's response will be used as the Mona context ID automatically.
-MONA_export_timestamp: Can be used to simulate as if the current call was made in a different time, as far as Mona is concerned.
-MONA_additional_data: A JSON-serializable dict with any other data you want to add to the monitoring context. This comes in handy if you want to add more information to the monitoring contex that isn't part of the basic OpenAI API call information. For example, if you are using a specific template ID or if this call is being made for a specific customer ID, these are fields you can add there to help get full context when monitoring with Mona.
+* MONA_context_id: The unique id of the context in which the call is made. By using this ID you can export more data to Mona to the same context from other places. If not supplied, the "id" field of the OpenAI Endpoint's response will be used as the Mona context ID automatically.
+* MONA_export_timestamp: Can be used to simulate as if the current call was made in a different time, as far as Mona is concerned.
+* MONA_additional_data: A JSON-serializable dict with any other data you want to add to the monitoring context. This comes in handy if you want to add more information to the monitoring contex that isn't part of the basic OpenAI API call information. For example, if you are using a specific template ID or if this call is being made for a specific customer ID, these are fields you can add there to help get full context when monitoring with Mona.
 
 Example:
 ```py

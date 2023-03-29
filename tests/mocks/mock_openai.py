@@ -1,27 +1,27 @@
-class FakeCreateExceptionCommand:
+class mockCreateExceptionCommand:
     pass
 
 
-class FakeCreateException(Exception):
+class mockCreateException(Exception):
     pass
 
 
-def get_fake_openai_class(original_class, create_responses, acreate_responses):
+def get_mock_openai_class(original_class, create_responses, acreate_responses):
     """
-    Unlike the fake mona clients, the class returned from this function
+    Unlike the mock mona clients, the class returned from this function
     makes no assertions. We are not here to test calls to OpenAI, but
     to Mona.
     """
 
-    class FakeCompletion(original_class):
+    class MockCompletion(original_class):
         _create_count = 0
         _acreate_count = 0
 
         @classmethod
         def _maybe_raise_exception(cls, current_response):
-            if isinstance(current_response, FakeCreateExceptionCommand):
-                raise FakeCreateException(
-                    "Some fake exception for testing purposes"
+            if isinstance(current_response, mockCreateExceptionCommand):
+                raise mockCreateException(
+                    "Some mock exception for testing purposes"
                 )
 
         @classmethod
@@ -50,4 +50,4 @@ def get_fake_openai_class(original_class, create_responses, acreate_responses):
                 acreate_responses, cls._acreate_count
             )
 
-    return type(original_class.__name__, (FakeCompletion,), {})
+    return type(original_class.__name__, (MockCompletion,), {})
