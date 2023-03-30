@@ -94,8 +94,8 @@ def monitor(
     Args:
         openai_class: An OpenAI API class to wrap with monitoring
             capabilties.
-        mona_creds: A pair of Mona API key and secret to set up Mona's
-            clients from its SDK
+        mona_creds: Either a dict or pair of Mona API key and secret to
+            set up Mona's clients from its SDK
         context_class: The Mona context class name to use for
             monitoring. Use a name of your choice.
         specs: A dictionary of specifications such as monitoring
@@ -218,7 +218,6 @@ def monitor(
 
             await mona_export(False)
 
-            response
             return response
 
         @classmethod

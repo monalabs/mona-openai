@@ -67,6 +67,8 @@ def get_full_privacy_analysis(prompt, answers):
     Returns a dictionary with a full privacy analysis of the given
     prompt, when comparing to the "answer" param.
     """
+    # TODO(itai): Extract the phone numbers from the prompt just once
+    #   to improve efficiency.
     return {
         "prompt_phone_number_count": len(_extract_phone_numbers(prompt)),
         "answer_unknown_phone_number_count": tuple(

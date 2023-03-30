@@ -104,7 +104,7 @@ You can then use the returned class' "create" and "acreate" functions just as yo
 
 The `monitor` function receives the following arguments:
 openai_class: An OpenAI API class to wrap with monitoring capabilties.
-mona_creds: A pair of Mona API key and secret to set up Mona's clients from its SDK
+mona_creds: A dict (containing "key" and "secret") or pair (tuple) of Mona API key and secret to set up Mona's clients from its SDK.
 context_class: The Mona context class name to use for monitoring. Use a constant name of your choice.
 specs: A dictionary of specifications such as monitoring sampling ratio.
 

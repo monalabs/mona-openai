@@ -9,8 +9,8 @@ class mockCreateException(Exception):
 def get_mock_openai_class(original_class, create_responses, acreate_responses):
     """
     Unlike the mock mona clients, the class returned from this function
-    makes no assertions. We are not here to test calls to OpenAI, but
-    to Mona.
+    makes no assertions about the data being sent, only about the
+    number of calls.
     """
 
     class MockCompletion(original_class):
