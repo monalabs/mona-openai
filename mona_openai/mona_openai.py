@@ -263,7 +263,8 @@ def monitor(
         @classmethod
         def create(cls, *args, **kwargs):
             """
-            A mona-monitored version of the openai base class' "create" function.
+            A mona-monitored version of the openai base class' "create"
+            function.
             """
             return asyncio.run(
                 cls._inner_create(client.export, super().create, args, kwargs)
@@ -272,7 +273,8 @@ def monitor(
         @classmethod
         async def acreate(cls, *args, **kwargs):
             """
-            An async mona-monitored version of the openai base class' "acreate" function.
+            An async mona-monitored version of the openai base class'
+            "acreate" function.
             """
             return await cls._inner_create(
                 async_client.export_async, super().acreate, args, kwargs
@@ -298,7 +300,11 @@ def get_rest_monitor(
     mona_clients_getter=get_mona_clients,
 ):
     """
-    Returns a client class for monitoring OpenAI REST calls not done using the OpenAI python client (e.g., for Azure users using their endpoints directly). This isn't a wrapper for any http requesting library and doesn't call the OpenAI API for you - it's just an easy logging client to log requests, responses and exceptions.
+    Returns a client class for monitoring OpenAI REST calls not done
+    using the OpenAI python client (e.g., for Azure users using their
+    endpoints directly). This isn't a wrapper for any http requesting
+    library and doesn't call the OpenAI API for you - it's just an easy
+    logging client to log requests, responses and exceptions.
     """
 
     # TODO(itai): Consider creating an async version as well.
@@ -308,7 +314,9 @@ def get_rest_monitor(
 
     class RestClient:
         """
-        This will be the returned Mona logging class. We follow OpenAI's way of doing things by using a static classe with relevant class methods.
+        This will be the returned Mona logging class. We follow
+        OpenAI's way of doing things by using a static classe with
+        relevant class methods.
         """
 
         @classmethod
@@ -320,9 +328,12 @@ def get_rest_monitor(
             export_timestamp=None,
         ):
             """
-            This function should be called with a request data dict, for example, what you would use as "json" when using "requests" to post.
+            This function should be called with a request data dict,
+            for example, what you would use as "json" when using
+            "requests" to post.
 
-            It returns a response logging function to be used with the response object.
+            It returns a response logging function to be used with the
+            response object.
             """
             start_time = time.time()
 
@@ -353,7 +364,11 @@ def get_rest_monitor(
 
             def log_response(response):
                 """
-                Only when this function is called, will data be logged out to Mona. This function should be called with a response object from the OpenAI API as close as possible to when it is received to allow accurate latency logging.
+                Only when this function is called, will data be logged
+                out to Mona. This function should be called with a
+                response object from the OpenAI API as close as
+                possible to when it is received to allow accurate
+                latency logging.
                 """
                 nonlocal inner_response
                 inner_response = response
@@ -363,7 +378,7 @@ def get_rest_monitor(
                 return mona_export(True)
 
             return log_response, log_exception
-        
+
         @classmethod
         def get_mona_client(cls):
             """
@@ -374,5 +389,3 @@ def get_rest_monitor(
             return client
 
     return RestClient
-
-

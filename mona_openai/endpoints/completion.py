@@ -10,6 +10,10 @@ COMPLETION_CLASS_NAME = "Completion"
 
 
 def get_analysis_params(input, response, specs):
+    """
+    Returns the full dict of analysis parameters for the given input
+    and response.
+    """
     return get_full_analysis(
         prompt=input["prompt"],
         answers=tuple(choice["text"] for choice in response["choices"]),
@@ -18,6 +22,11 @@ def get_analysis_params(input, response, specs):
 
 
 def get_clean_message(message, specs):
+    """
+    Returns a copy of the given message with relevant data removed, for
+    example the actual texts, to avoid sending such information, that
+    is sometimes sensitive, to Mona.
+    """
     new_message = deepcopy(message)
     if not specs.get("export_prompt", False):
         new_message["input"].pop("prompt")

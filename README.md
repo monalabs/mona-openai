@@ -30,13 +30,19 @@ from mona_openai import monitor
 
 openai.api_key = environ.get("OPEN_AI_KEY")
 
+MONA_API_KEY = environ.get("MONA_API_KEY")
+MONA_SECRET = environ.get("MONA_SECRET")
+MONA_CREDS = {
+    "key": MONA_API_KEY,
+    "secret": MONA_SECRET,
+}
+CONTEXT_CLASS_NAME = "SOME_MONITORING_CONTEXT_NAME"
+
+
 monitored_completion = monitor(
     openai.Completion,
-    (
-        environ.get("MONA_API_KEY"),
-        environ.get("MONA_SECRET"),
-    ),
-    "SOME_MONITORING_CONTEXT_NAME",
+    MONA_CREDS,
+    CONTEXT_CLASS_NAME,
 )
 
 
@@ -144,18 +150,23 @@ In some cases you may choose to use OpenAI's API directly with REST calls and no
 ```py
 # Direct REST usage, without OpenAI client
 import requests
-import json
 from os import environ
 from mona_openai import get_rest_monitor
+
+
+MONA_API_KEY = environ.get("MONA_API_KEY")
+MONA_SECRET = environ.get("MONA_SECRET")
+MONA_CREDS = {
+    "key": MONA_API_KEY,
+    "secret": MONA_SECRET,
+}
+CONTEXT_CLASS_NAME = "SOME_MONITORING_CONTEXT_NAME"
 
 # Get Mona logger
 mona_logger = get_rest_monitor(
     "Completion",
-    {
-        "key": environ.get("MONA_API_KEY"),
-        "secret": environ.get("MONA_SECRET"),
-    },
-    "TEST_MONITORING_CONTEXT_NAME",
+    MONA_CREDS,
+    CONTEXT_CLASS_NAME,
 )
 
 # Set up the API endpoint URL and authentication headers
@@ -173,13 +184,18 @@ data = {
     "model": model,
     "n": n,
 }
+
+# The log_request function returns two other function for later logging
+# the response or the exception. When we later do that, the logger will
+# actually calculate all the relevant metrics and will send them to
+# Mona.
 response_logger, exception_logger = mona_logger.log_request(
     data, additional_data={"customer_id": "A531251"}
 )
 
 try:
     # Send the request to the API
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response = requests.post(url, headers=headers, json=data)
 
     # Check for HTTP errors
     response.raise_for_status()
