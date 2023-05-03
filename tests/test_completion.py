@@ -18,6 +18,7 @@ from mona_openai.mona_openai import (
     CONTEXT_ID_ARG_NAME,
     EXPORT_TIMESTAMP_ARG_NAME,
     monitor,
+    get_rest_monitor,
 )
 from .mocks.mock_openai import (
     mockCreateException,
@@ -137,6 +138,33 @@ def test_basic():
             (_get_mona_message(),), ()
         ),
     ).create(**_DEFAULT_INPUT)
+
+
+def test_rest():
+    get_rest_monitor(
+        Completion.__name__,
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (_get_mona_message(),), ()
+        ),
+    ).log_request(_DEFAULT_INPUT)[0](_DEFAULT_RESPONSE)
+
+
+def test_rest_exception():
+    get_rest_monitor(
+        Completion.__name__,
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (
+                _get_mona_message(
+                    is_exception=True, response=None, analysis=None
+                ),
+            ),
+            (),
+        ),
+    ).log_request(_DEFAULT_INPUT)[1]()
 
 
 def test_export_response_text():
