@@ -11,7 +11,12 @@ from .util.func_util import (
     add_conditional_sampling,
     call_non_blocking_sync_or_async,
 )
-from .endpoints.completion import COMPLETION_CLASS_NAME, get_completion_class
+from .endpoints.completion import (
+    COMPLETION_CLASS_NAME,
+    get_completion_class,
+    get_analysis_params as completion_analysis_getter,
+    get_clean_message as completion_message_cleaner,
+)
 from .util.validation_util import validate_and_get_sampling_ratio
 
 EMPTY_DICT = MappingProxyType({})
@@ -37,6 +42,53 @@ def _get_monitored_base_class(openai_class):
     if class_name not in ENDPOINT_NAME_TO_WRAPPER:
         raise WrongOpenAIClassException("Class not supported: " + class_name)
     return ENDPOINT_NAME_TO_WRAPPER[class_name](openai_class)
+
+
+def _get_mona_single_message(
+    api_name,
+    request_input,
+    start_time,
+    is_exception,
+    is_async,
+    response,
+    analysis_params_getter,
+    specs,
+    context_class,
+    message_cleaner,
+    additional_data,
+    context_id,
+    export_timestamp,
+):
+    """
+    Returns a MonaSingleMessage object to be used for data
+    exporting to Mona's servers by a Mona client.
+    """
+
+    message = {
+        "input": request_input,
+        "latency": time.time() - start_time,
+        "is_exception": is_exception,
+        "api_name": api_name,
+        "is_async": is_async,
+    }
+
+    if additional_data:
+        message["additional_data"] = additional_data
+
+    if response:
+        message["response"] = response
+        message["analysis"] = analysis_params_getter(
+            request_input, response, specs
+        )
+
+    message = message_cleaner(message, specs)
+
+    return MonaSingleMessage(
+        message=message,
+        contextClass=context_class,
+        contextId=context_id,
+        exportTimestamp=export_timestamp,
+    )
 
 
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
@@ -126,7 +178,7 @@ def monitor(
             """
             # Recreate the input dict to avoid manipulating the caller's data,
             # and remove Mona-related data.
-            new_kwargs = deepcopy(
+            request_input = deepcopy(
                 {
                     x: kwargs_param[x]
                     for x in kwargs_param
@@ -134,34 +186,22 @@ def monitor(
                 }
             )
 
-            message = {
-                "input": new_kwargs,
-                "latency": time.time() - start_time,
-                "is_exception": is_exception,
-                "api_name": COMPLETION_CLASS_NAME,
-                "is_async": is_async,
-            }
-
-            if ADDITIONAL_DATA_ARG_NAME in kwargs_param:
-                message["additional_data"] = kwargs_param[
-                    ADDITIONAL_DATA_ARG_NAME
-                ]
-
-            if response:
-                message["response"] = response
-                message["analysis"] = super()._get_analysis_params(
-                    new_kwargs, response, specs
-                )
-
-            message = super()._get_clean_message(message, specs)
-
-            return MonaSingleMessage(
-                message=message,
-                contextClass=context_class,
-                contextId=kwargs_param.get(
+            return _get_mona_single_message(
+                api_name=openai_class.__name__,
+                request_input=request_input,
+                start_time=start_time,
+                is_exception=is_exception,
+                is_async=is_async,
+                response=response,
+                analysis_params_getter=super()._get_analysis_params,
+                specs=specs,
+                context_class=context_class,
+                message_cleaner=super()._get_clean_message,
+                additional_data=kwargs_param.get(ADDITIONAL_DATA_ARG_NAME),
+                context_id=kwargs_param.get(
                     CONTEXT_ID_ARG_NAME, response["id"] if response else None
                 ),
-                exportTimestamp=kwargs_param.get(
+                export_timestamp=kwargs_param.get(
                     EXPORT_TIMESTAMP_ARG_NAME, start_time
                 ),
             )
@@ -182,7 +222,7 @@ def monitor(
             response = None
 
             async def _inner_mona_export(is_exception):
-                await call_non_blocking_sync_or_async(
+                return await call_non_blocking_sync_or_async(
                     export_function,
                     (
                         cls._get_mona_single_message(
@@ -223,7 +263,7 @@ def monitor(
         @classmethod
         def create(cls, *args, **kwargs):
             """
-            A mona-monitored version of openai.Completion.create.
+            A mona-monitored version of the openai base class' "create" function.
             """
             return asyncio.run(
                 cls._inner_create(client.export, super().create, args, kwargs)
@@ -232,7 +272,7 @@ def monitor(
         @classmethod
         async def acreate(cls, *args, **kwargs):
             """
-            An async mona-monitored version of openai.Completion.acreate.
+            An async mona-monitored version of the openai base class' "acreate" function.
             """
             return await cls._inner_create(
                 async_client.export_async, super().acreate, args, kwargs
@@ -248,3 +288,91 @@ def monitor(
             return (client, async_client)
 
     return type(base_class.__name__, (MonitoredOpenAI,), {})
+
+
+def get_rest_monitor(
+    openai_endpoint_name,
+    mona_creds,
+    context_class,
+    specs=EMPTY_DICT,
+    mona_clients_getter=get_mona_clients,
+):
+    """
+    Returns a client class for monitoring OpenAI REST calls not done using the OpenAI python client (e.g., for Azure users using their endpoints directly). This isn't a wrapper for any http requesting library and doesn't call the OpenAI API for you - it's just an easy logging client to log requests, responses and exceptions.
+    """
+
+    # TODO(itai): Consider creating an async version as well.
+    client, _ = mona_clients_getter(mona_creds)
+
+    sampling_ratio = validate_and_get_sampling_ratio(specs)
+
+    class RestClient:
+        """
+        This will be the returned Mona logging class. We follow OpenAI's way of doing things by using a static classe with relevant class methods.
+        """
+
+        @classmethod
+        def log_request(
+            cls,
+            request_dict,
+            additional_data=None,
+            context_id=None,
+            export_timestamp=None,
+        ):
+            """
+            This function should be called with a request data dict, for example, what you would use as "json" when using "requests" to post.
+
+            It returns a response logging function to be used with the response object.
+            """
+            start_time = time.time()
+
+            inner_response = None
+
+            def _inner_mona_export(is_exception):
+                return client.export(
+                    _get_mona_single_message(
+                        api_name=openai_endpoint_name,
+                        request_input=request_dict,
+                        start_time=start_time,
+                        is_exception=is_exception,
+                        is_async=False,
+                        response=inner_response,
+                        analysis_params_getter=completion_analysis_getter,
+                        specs=specs,
+                        context_class=context_class,
+                        message_cleaner=completion_message_cleaner,
+                        additional_data=additional_data,
+                        context_id=context_id,
+                        export_timestamp=export_timestamp,
+                    )
+                )
+
+            mona_export = add_conditional_sampling(
+                _inner_mona_export, sampling_ratio
+            )
+
+            def log_response(response):
+                """
+                Only when this function is called, will data be logged out to Mona. This function should be called with a response object from the OpenAI API as close as possible to when it is received to allow accurate latency logging.
+                """
+                nonlocal inner_response
+                inner_response = response
+                return mona_export(False)
+
+            def log_exception():
+                return mona_export(True)
+
+            return log_response, log_exception
+        
+        @classmethod
+        def get_mona_client(cls):
+            """
+            Returns the two Mona client this class works with to allow
+            exporting more data or communicating directly with Mona's
+            API.
+            """
+            return client
+
+    return RestClient
+
+

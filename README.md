@@ -138,6 +138,61 @@ response = asyncio.run(monitored_completion.acreate(
 print(response.choices[0].text)
 ```
 
+### Using OpenAI with REST calls instead of OpenAI's Python client
+In some cases you may choose to use OpenAI's API directly with REST calls and not using OpenAI's SDK. For these cases we allow a more direct approach for logging to Mona as well, by using the "get_rest_monitor" function. See example below.
+
+```py
+# Direct REST usage, without OpenAI client
+import requests
+import json
+from os import environ
+from mona_openai import get_rest_monitor
+
+# Get Mona logger
+mona_logger = get_rest_monitor(
+    "Completion",
+    {
+        "key": environ.get("MONA_API_KEY"),
+        "secret": environ.get("MONA_SECRET"),
+    },
+    "TEST_MONITORING_CONTEXT_NAME",
+)
+
+# Set up the API endpoint URL and authentication headers
+url = "https://api.openai.com/v1/completions"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {environ.get('OPEN_AI_KEY')}",
+}
+
+# Set up the request data
+data = {
+    "prompt": prompt,
+    "max_tokens": max_tokens,
+    "temperature": temperature,
+    "model": model,
+    "n": n,
+}
+response_logger, exception_logger = mona_logger.log_request(
+    data, additional_data={"customer_id": "A531251"}
+)
+
+try:
+    # Send the request to the API
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+
+    # Check for HTTP errors
+    response.raise_for_status()
+
+    # Log response to Mona
+    response_logger(response.json())
+    print(response.json()["choices"][0]["text"])
+
+except Exception as err:
+    # Log exception to Mona
+    exception_logger()
+```
+
 ## Mona SDK
 
 This package uses the mona_sdk package to export the relevant data to Mona. There are several environment variables you can use to configure the SDK's behavior. For example, you can set it up to raise exceptions when exporting data to Mona fails (it doesn't do that by default).
