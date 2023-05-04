@@ -6,3 +6,6 @@ __pycache__/
 .vscode
 
 *.ipynb
+
+dist
+mona_openai.egg-info
