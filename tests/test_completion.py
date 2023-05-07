@@ -29,22 +29,25 @@ from .mocks.mock_mona_client import get_mock_mona_clients_getter
 
 _DEFAULT_CONTEXT_CLASS = "TEST_CLASS"
 
+_DEFAULT_RESPONSE_TEXT = "\n\nMy name is"
+
+_DEFAULT_RESPONSE_COMMON_VARIABLES = {
+    "created": 1679231055,
+    "id": "cmpl-6vmzn6DUc2ZNjkyEvAyTf2tAgPl3A",
+    "model": "text-ada-001",
+    "object": "text_completion",
+}
 
 _DEFAULT_RESPONSE = {
     "choices": [
         {
             "finish_reason": "length",
             "index": 0,
-            "logprobs": None,
-            "text": "\n\nMy name is",
+            "text": _DEFAULT_RESPONSE_TEXT,
         }
     ],
-    "created": 1679231055,
-    "id": "cmpl-6vmzn6DUc2ZNjkyEvAyTf2tAgPl3A",
-    "model": "text-ada-001",
-    "object": "text_completion",
     "usage": {"completion_tokens": 5, "prompt_tokens": 8, "total_tokens": 13},
-}
+} | _DEFAULT_RESPONSE_COMMON_VARIABLES
 
 
 def _get_response_without_texts(response):
@@ -58,7 +61,7 @@ _DEFAULT_EXPORTED_RESPONSE = _get_response_without_texts(_DEFAULT_RESPONSE)
 
 _DEFAULT_INPUT = {
     "prompt": "I want to generate some text about ",
-    "engine": "text-ada-001",
+    "model": "text-ada-001",
     "temperature": 0.6,
     "n": 1,
     "max_tokens": 5,
@@ -127,6 +130,38 @@ def _get_mona_message(
 
     message["message"] = _remove_none_values(message["message"])
     return _remove_none_values(message)
+
+
+def test_stream():
+    def response_generator():
+        words = _DEFAULT_RESPONSE_TEXT.split(" ")
+        for i, word in enumerate(words):
+            choice = {
+                "text": (word + " ") if i < len(words) - 1 else word,
+                "index": 0,
+                "logprobs": None,
+                "finish_reason": None if i < len(words) - 1 else "length"
+            }
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES |  {"choices": [choice]}
+
+    input = deepcopy(_DEFAULT_INPUT)
+    input["stream"] = True
+
+    expected_message = _get_mona_message()
+    expected_message["message"]["input"]["stream"] = True
+
+    for _ in monitor(
+        get_mock_openai_class(Completion, (response_generator(),), ()),
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (expected_message,), ()
+        ),
+    ).create(**input):
+        pass
+
+
+    # assert(False)
 
 
 def test_basic():

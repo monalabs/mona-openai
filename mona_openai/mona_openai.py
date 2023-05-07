@@ -1,5 +1,4 @@
 import time
-import asyncio
 from copy import deepcopy
 from types import MappingProxyType
 
@@ -7,10 +6,13 @@ from mona_sdk import MonaSingleMessage
 
 from .exceptions import WrongOpenAIClassException
 from .mona_client import get_mona_clients
-from .util.func_util import (
-    add_conditional_sampling,
+from .util.func_util import add_conditional_sampling
+from .util.async_util import (
+    run_in_an_event_loop,
     call_non_blocking_sync_or_async,
 )
+from .util.tokens_util import get_usage
+from .util.stream_util import ResponseGatheringIterator
 from .endpoints.completion import (
     COMPLETION_CLASS_NAME,
     get_completion_class,
@@ -50,6 +52,7 @@ def _get_mona_single_message(
     start_time,
     is_exception,
     is_async,
+    stream_start_time,
     response,
     analysis_params_getter,
     specs,
@@ -67,6 +70,9 @@ def _get_mona_single_message(
     message = {
         "input": request_input,
         "latency": time.time() - start_time,
+        "stream_start_latency": stream_start_time - start_time
+        if stream_start_time is not None
+        else None,
         "is_exception": is_exception,
         "api_name": api_name,
         "is_async": is_async,
@@ -170,7 +176,13 @@ def monitor(
 
         @classmethod
         def _get_mona_single_message(
-            cls, kwargs_param, start_time, is_exception, is_async, response
+            cls,
+            kwargs_param,
+            start_time,
+            is_exception,
+            is_async,
+            stream_start_time,
+            response,
         ):
             """
             Returns a MonaSingleMessage object to be used for data
@@ -192,6 +204,7 @@ def monitor(
                 start_time=start_time,
                 is_exception=is_exception,
                 is_async=is_async,
+                stream_start_time=stream_start_time,
                 response=response,
                 analysis_params_getter=super()._get_analysis_params,
                 specs=specs,
@@ -217,9 +230,14 @@ def monitor(
             and async activations (helps with wrapping both "create"
             and "acreate").
             """
-            start_time = time.time()
+
+            is_stream = kwargs.get("stream", False)
+            is_async = super_function.__name__ == "acreate"
 
             response = None
+
+            # will be used only when stream is enabled
+            stream_start_time = None
 
             async def _inner_mona_export(is_exception):
                 return await call_non_blocking_sync_or_async(
@@ -229,7 +247,8 @@ def monitor(
                             kwargs,
                             start_time,
                             is_exception,
-                            super_function.__name__ == "acreate",
+                            is_async,
+                            stream_start_time,
                             response,
                         ),
                     ),
@@ -239,10 +258,12 @@ def monitor(
                 _inner_mona_export, sampling_ratio
             )
 
-            try:
+            start_time = time.time()
+
+            async def inner_super_function():
                 # Call the actual openai create function without the Mona
                 # specific arguments.
-                response = await call_non_blocking_sync_or_async(
+                return await call_non_blocking_sync_or_async(
                     super_function,
                     args,
                     {
@@ -251,14 +272,47 @@ def monitor(
                         if not x.startswith(MONA_ARGS_PREFIX)
                     },
                 )
-            except Exception:
+
+            async def inner_handle_exception():
                 if not specs.get("avoid_monitoring_exceptions", False):
                     await mona_export(True)
+
+            if not is_stream:
+                try:
+                    response = await inner_super_function()
+                except Exception:
+                    await inner_handle_exception()
+                    raise
+
+                await mona_export(False)
+
+                return response
+
+            # From here is stream handling.
+
+            async def _stream_done_callback(
+                final_response, actual_stream_start_time
+            ):
+                nonlocal response
+                nonlocal stream_start_time
+                # There is no usage data in returned stream responses, so we add it here.
+                response = final_response | {
+                    "usage": get_usage(request=kwargs, response=final_response)
+                }
+                stream_start_time = actual_stream_start_time
+                await mona_export(False)
+
+            try:
+                # Call the actual openai create function without the Mona
+                # specific arguments.
+                return ResponseGatheringIterator(
+                    original_iterator=await inner_super_function(),
+                    callback=_stream_done_callback,
+                )
+
+            except Exception:
+                await inner_handle_exception()
                 raise
-
-            await mona_export(False)
-
-            return response
 
         @classmethod
         def create(cls, *args, **kwargs):
@@ -266,7 +320,7 @@ def monitor(
             A mona-monitored version of the openai base class' "create"
             function.
             """
-            return asyncio.run(
+            return run_in_an_event_loop(
                 cls._inner_create(client.export, super().create, args, kwargs)
             )
 
@@ -347,6 +401,8 @@ def get_rest_monitor(
                         start_time=start_time,
                         is_exception=is_exception,
                         is_async=False,
+                        # TODO(itai): Support stream in REST as well.
+                        stream_start_time=None,
                         response=inner_response,
                         analysis_params_getter=completion_analysis_getter,
                         specs=specs,
