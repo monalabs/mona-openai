@@ -2,9 +2,7 @@
 A module with utility (usually higher order) functions for enriching
 and extending other functions' functionalities.
 """
-from types import MappingProxyType
 from random import random
-from inspect import iscoroutinefunction
 
 
 def add_conditional_sampling(inner_func, sampling_ratio):

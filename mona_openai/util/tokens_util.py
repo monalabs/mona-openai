@@ -10,7 +10,8 @@ def _get_number_of_tokens(text, enc):
 
 def get_usage(request, response):
     """
-    Returns a usage dict containing the number of tokens in the prompt, in the response, and totally.
+    Returns a usage dict containing the number of tokens in the prompt, in the
+    response, and totally.
     """
     enc = tiktoken.encoding_for_model(
         request.get("model", request.get("engine"))

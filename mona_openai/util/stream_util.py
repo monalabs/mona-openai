@@ -8,11 +8,16 @@ import inspect
 
 class ResponseGatheringIterator:
     """
-    A generator class that takes an original OpenAI stream response generator and wraps it with functionality to gather all the stream of responses as they come, and create from them a singular reponse object as would have been received in non-stream OpenAI usage.
+    A generator class that takes an original OpenAI stream response generator
+    and wraps it with functionality to gather all the stream of responses as
+    they come, and create from them a singular reponse object as would have
+    been received in non-stream OpenAI usage.
 
-    Once the original generator is done it creates the full response and calls a callback with it.
+    Once the original generator is done it creates the full response and calls
+    a callback with it.
 
-    It acts both as sync and async generator to ease the use of sync/async joint code.
+    It acts both as sync and async generator to ease the use of sync/async
+    joint code.
     """
 
     def __init__(self, original_iterator, callback):
@@ -46,7 +51,8 @@ class ResponseGatheringIterator:
 
     def _add_response(self, event):
         """
-        The main and only exposed function of the ResponseGatherer class. Use this function to collect stream events.
+        The main and only exposed function of the ResponseGatherer class. Use
+        this function to collect stream events.
         """
         if self._initial_event_recieved_time is None:
             self._initial_event_recieved_time = time.time()
@@ -59,7 +65,8 @@ class ResponseGatheringIterator:
         return event
 
     def _call_callback(self):
-        # We allow an async function as the callback event if thsi class is used as a sync generator. This code handles this scenario.
+        # We allow an async function as the callback event if thsi class is
+        # used as a sync generator. This code handles this scenario.
         callback_args = (
             self._create_singular_response(),
             self._initial_event_recieved_time,
@@ -81,7 +88,8 @@ class ResponseGatheringIterator:
         self._choices[index] = self._choices.get(index, []) + [choice]
 
     def _get_only_choice(self, event):
-        # Stream response events have only a single choice that specifies its own index.
+        # Stream response events have only a single choice that specifies
+        # its own index.
         return event["choices"][0]
 
     def _create_singular_response(self):

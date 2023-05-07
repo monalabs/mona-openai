@@ -295,7 +295,8 @@ def monitor(
             ):
                 nonlocal response
                 nonlocal stream_start_time
-                # There is no usage data in returned stream responses, so we add it here.
+                # There is no usage data in returned stream responses, so
+                # we add it here.
                 response = final_response | {
                     "usage": get_usage(request=kwargs, response=final_response)
                 }

@@ -3,7 +3,8 @@ from mona_sdk.client import Client
 
 
 def _get_clean_dict(input_dict):
-    # TODO(itai): While we can't really test latency values, we should try to add a test for these fields' existence when relevant.
+    # TODO(itai): While we can't really test latency values, we should try to
+    #   add a test for these fields' existence when relevant.
     ret = {
         x: input_dict[x]
         for x in input_dict
