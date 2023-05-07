@@ -38,6 +38,7 @@ resp = monitored_completion.create(
     n=2,
     temperature=temperature,
     stream=True,
+    MONA_additional_data={"customer_id": "A531251"},
 )
 # resp = asyncio.get_event_loop().run_until_complete(
 #     monitored_completion.acreate(

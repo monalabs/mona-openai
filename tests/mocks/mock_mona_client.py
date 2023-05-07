@@ -9,7 +9,7 @@ def _get_clean_dict(input_dict):
         for x in input_dict
         if x not in ("latency", "stream_start_latency")
     }
-    for choice in ret["response"]["choices"]:
+    for choice in ret.get("response", {"choices": ()})["choices"]:
         # We don't support monitoring this field so no need to test for it.
         choice.pop("logprobs", None)
     return ret
@@ -17,9 +17,7 @@ def _get_clean_dict(input_dict):
 
 def _assert_message_equality(message_1, message_2):
     message_1 = _get_clean_dict(message_1)
-    message_2 = _get_clean_dict(
-        message_2
-    )
+    message_2 = _get_clean_dict(message_2)
     print(DeepDiff(message_1, message_2))
     assert message_1 == message_2
 
