@@ -24,114 +24,81 @@ monitored_completion = monitor(
 )
 
 
-prompt = "The next word is 'something': "
+prompt = "I want to generate some text about "
 model = "text-ada-001"
 temperature = 0.6
-max_tokens = 80
+max_tokens = 5
 n = 1
 
-
-resp = monitored_completion.create(
-    model=model,
+# Regular (sync) usage
+response = monitored_completion.create(
+    engine=model,
     prompt=prompt,
     max_tokens=max_tokens,
-    n=2,
+    n=n,
     temperature=temperature,
-    stream=True,
     MONA_additional_data={"customer_id": "A531251"},
 )
-# resp = asyncio.get_event_loop().run_until_complete(
-#     monitored_completion.acreate(
-#         engine=model,
-#         prompt=prompt,
-#         max_tokens=max_tokens,
-#         n=2,
-#         temperature=temperature,
-#         stream=False,
-#     )
-# )
-print(resp)
-# async def run_resp():
-#     async for x in resp:
-#         print(x)
-# asyncio.get_event_loop().run_until_complete(run_resp())
-for x in resp:
-    print(x)
-# for resp in events:
-# print(resp)
-#
-# asyncio.run(streaming_async())
+print(response.choices[0].text)
 
+# Async usage
+response = asyncio.run(
+    monitored_completion.acreate(
+        engine=model,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        n=n,
+        temperature=temperature,
+        MONA_additional_data={"customer_id": "A531251"},
+    )
+)
 
-# Regular (sync) usage
-# response = monitored_completion.create(
-#     engine=model,
-#     prompt=prompt,
-#     max_tokens=max_tokens,
-#     n=n,
-#     temperature=temperature,
-#     MONA_additional_data={"customer_id": "A531251"},
-# )
-# print(response.choices[0].text)
+print(response.choices[0].text)
 
-# # Async usage
-# response = asyncio.run(
-#     monitored_completion.acreate(
-#         engine=model,
-#         prompt=prompt,
-#         max_tokens=max_tokens,
-#         n=n,
-#         temperature=temperature,
-#         MONA_additional_data={"customer_id": "A531251"},
-#     )
-# )
+# Direct REST usage, without OpenAI client
 
-# print(response.choices[0].text)
+# Get Mona logger
+mona_logger = get_rest_monitor(
+    "Completion",
+    MONA_CREDS,
+    CONTEXT_CLASS_NAME,
+)
 
-# # Direct REST usage, without OpenAI client
+# Set up the API endpoint URL and authentication headers
+url = "https://api.openai.com/v1/completions"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {environ.get('OPEN_AI_KEY')}",
+}
 
-# # Get Mona logger
-# mona_logger = get_rest_monitor(
-#     "Completion",
-#     MONA_CREDS,
-#     CONTEXT_CLASS_NAME,
-# )
+# Set up the request data
+data = {
+    "prompt": prompt,
+    "max_tokens": max_tokens,
+    "temperature": temperature,
+    "model": model,
+    "n": n,
+}
 
-# # Set up the API endpoint URL and authentication headers
-# url = "https://api.openai.com/v1/completions"
-# headers = {
-#     "Content-Type": "application/json",
-#     "Authorization": f"Bearer {environ.get('OPEN_AI_KEY')}",
-# }
+# The log_request function returns two other function for later logging
+# the response or the exception. When we later do that, the logger will
+# actually calculate all the relevant metrics and will send them to
+# Mona.
+response_logger, exception_logger = mona_logger.log_request(
+    data, additional_data={"customer_id": "A531251"}
+)
 
-# # Set up the request data
-# data = {
-#     "prompt": prompt,
-#     "max_tokens": max_tokens,
-#     "temperature": temperature,
-#     "model": model,
-#     "n": n,
-# }
+try:
+    # Send the request to the API
+    response = requests.post(url, headers=headers, json=data)
 
-# # The log_request function returns two other function for later logging
-# # the response or the exception. When we later do that, the logger will
-# # actually calculate all the relevant metrics and will send them to
-# # Mona.
-# response_logger, exception_logger = mona_logger.log_request(
-#     data, additional_data={"customer_id": "A531251"}
-# )
+    # Check for HTTP errors
+    response.raise_for_status()
 
-# try:
-#     # Send the request to the API
-#     response = requests.post(url, headers=headers, json=data)
+    # Log response to Mona
+    response_logger(response.json())
+    print(response.json()["choices"][0]["text"])
 
-#     # Check for HTTP errors
-#     response.raise_for_status()
-
-#     # Log response to Mona
-#     response_logger(response.json())
-#     print(response.json()["choices"][0]["text"])
-
-# except Exception:
-#     # Log exception to Mona
-#     exception_logger()
+except Exception:
+    # Log exception to Mona
+    exception_logger()

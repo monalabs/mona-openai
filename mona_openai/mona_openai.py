@@ -88,9 +88,7 @@ def _get_mona_single_message(
         )
 
     message = message_cleaner(message, specs)
-
-    print("MESSAGE: ", message)
-
+    
     return MonaSingleMessage(
         message=message,
         contextClass=context_class,

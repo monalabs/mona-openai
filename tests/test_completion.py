@@ -432,22 +432,35 @@ def test_stream():
     ).create(**input):
         pass
 
+
 def test_stream_multiple_answers():
     def response_generator():
         words = _DEFAULT_RESPONSE_TEXT.split(" ")
         for i, word in enumerate(words):
-            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {"choices": [{
-                "text": (word + " ") if i < len(words) - 1 else word,
-                "index": 0,
-                "logprobs": None,
-                "finish_reason": None if i < len(words) - 1 else "length",
-            }]}
-            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {"choices": [{
-                "text": (word + " ") if i < len(words) - 1 else word,
-                "index": 1,
-                "logprobs": None,
-                "finish_reason": None if i < len(words) - 1 else "length",
-            }]}
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
+                "choices": [
+                    {
+                        "text": (word + " ") if i < len(words) - 1 else word,
+                        "index": 0,
+                        "logprobs": None,
+                        "finish_reason": None
+                        if i < len(words) - 1
+                        else "length",
+                    }
+                ]
+            }
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
+                "choices": [
+                    {
+                        "text": (word + " ") if i < len(words) - 1 else word,
+                        "index": 1,
+                        "logprobs": None,
+                        "finish_reason": None
+                        if i < len(words) - 1
+                        else "length",
+                    }
+                ]
+            }
 
     input = deepcopy(_DEFAULT_INPUT)
     input["stream"] = True
@@ -459,30 +472,34 @@ def test_stream_multiple_answers():
     expected_response = deepcopy(_DEFAULT_EXPORTED_RESPONSE)
     expected_response["choices"] += deepcopy(expected_response["choices"])
     expected_response["choices"][1]["index"] = 1
-    expected_response["usage"] = {"completion_tokens": 10, "prompt_tokens": 8, "total_tokens": 18}
+    expected_response["usage"] = {
+        "completion_tokens": 10,
+        "prompt_tokens": 8,
+        "total_tokens": 18,
+    }
 
     new_analysis = {
         "privacy": {
             "prompt_phone_number_count": 0,
-            "answer_unknown_phone_number_count": (0,0),
+            "answer_unknown_phone_number_count": (0, 0),
             "prompt_email_count": 0,
-            "answer_unkown_email_count": (0,0),
+            "answer_unkown_email_count": (0, 0),
         },
         "textual": {
             "prompt_length": 35,
-            "answer_length": (12,12),
+            "answer_length": (12, 12),
             "prompt_word_count": 7,
-            "answer_word_count": (3,3),
+            "answer_word_count": (3, 3),
             "prompt_preposition_count": 2,
             "prompt_preposition_ratio": 0.2857142857142857,
-            "answer_preposition_count": (0,0),
-            "answer_preposition_ratio": (0.0,0.0),
-            "answer_words_not_in_prompt_count": (3,3),
-            "answer_words_not_in_prompt_ratio": (1.0,1.0),
+            "answer_preposition_count": (0, 0),
+            "answer_preposition_ratio": (0.0, 0.0),
+            "answer_words_not_in_prompt_count": (3, 3),
+            "answer_words_not_in_prompt_ratio": (1.0, 1.0),
         },
         "profanity": {
             "prompt_profanity_prob": 0.05,
-            "answer_profanity_prob": (0.05,0.05),
+            "answer_profanity_prob": (0.05, 0.05),
         },
     }
 
@@ -491,7 +508,15 @@ def test_stream_multiple_answers():
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
-            (_get_mona_message(is_stream=True, input=expected_input, response=expected_response, analysis=new_analysis),), ()
+            (
+                _get_mona_message(
+                    is_stream=True,
+                    input=expected_input,
+                    response=expected_response,
+                    analysis=new_analysis,
+                ),
+            ),
+            (),
         ),
     ).create(**input):
         pass
