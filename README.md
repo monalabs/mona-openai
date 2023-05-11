@@ -222,3 +222,6 @@ NOTE: Stream is currently only supported with SDK usage, and not with using REST
 
 This package uses the mona_sdk package to export the relevant data to Mona. There are several environment variables you can use to configure the SDK's behavior. For example, you can set it up to raise exceptions when exporting data to Mona fails (it doesn't do that by default).
 
+## Monitoring for profanity
+
+Mona uses the alt-profanity-check pacakge (https://pypi.org/project/alt-profanity-check/) to create both boolean predictions and probabilty scores for the existence of profanity both in the prompt and in the responses. We use the built in package methods for that. If you want, for example, to use a different probability threshold for the boolean prediction, you can do that by changing your Mona config on the Mona dashboard.

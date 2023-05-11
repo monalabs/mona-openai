@@ -94,6 +94,8 @@ _DEFAULT_ANALYSIS = {
     "profanity": {
         "prompt_profanity_prob": 0.05,
         "answer_profanity_prob": (0.05,),
+        "prompt_has_profanity": False,
+        "answer_has_profanity": (False,),
     },
 }
 
@@ -369,6 +371,8 @@ def test_multiple_answers():
         "profanity": {
             "prompt_profanity_prob": 0.05,
             "answer_profanity_prob": (0.05, 0.01, 0.05),
+            "prompt_has_profanity": False,
+            "answer_has_profanity": (False, False, False),
         },
     }
 
@@ -501,6 +505,8 @@ def test_stream_multiple_answers():
         "profanity": {
             "prompt_profanity_prob": 0.05,
             "answer_profanity_prob": (0.05, 0.05),
+            "prompt_has_profanity": False,
+            "answer_has_profanity": (False, False),
         },
     }
 
