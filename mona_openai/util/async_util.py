@@ -4,6 +4,11 @@ from inspect import iscoroutinefunction
 
 
 def run_in_an_event_loop(coroutine):
+    """
+    A light wrapper around asyncio.run to avoid crushing when trying to run a
+    coroutine in an environment where an event loop is already in place and
+    async.run doesn't work.
+    """
     try:
         return asyncio.run(coroutine)
     except RuntimeError:

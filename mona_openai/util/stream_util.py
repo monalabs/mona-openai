@@ -60,12 +60,12 @@ class ResponseGatheringIterator:
                 x: event[x] for x in event if x != "choices"
             }
 
-        # Gather response events by choice index
+        # Gather response events by choice index.
         self._handle_choice(self._get_only_choice(event))
         return event
 
     def _call_callback(self):
-        # We allow an async function as the callback event if thsi class is
+        # We allow an async function as the callback event if this class is
         # used as a sync generator. This code handles this scenario.
         callback_args = (
             self._create_singular_response(),

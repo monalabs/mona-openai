@@ -407,12 +407,13 @@ def test_additional_data():
 def test_stream():
     def response_generator():
         words = _DEFAULT_RESPONSE_TEXT.split(" ")
+        last_index = len(words) - 1
         for i, word in enumerate(words):
             choice = {
-                "text": (word + " ") if i < len(words) - 1 else word,
+                "text": (word + " ") if i < last_index else word,
                 "index": 0,
                 "logprobs": None,
-                "finish_reason": None if i < len(words) - 1 else "length",
+                "finish_reason": None if i < last_index else "length",
             }
             yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {"choices": [choice]}
 

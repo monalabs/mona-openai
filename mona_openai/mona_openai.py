@@ -288,7 +288,7 @@ def monitor(
 
                 return response
 
-            # From here is stream handling.
+            # From here it's stream handling.
 
             async def _stream_done_callback(
                 final_response, actual_stream_start_time

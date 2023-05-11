@@ -213,9 +213,9 @@ except Exception as err:
 
 OpenAI allows receiving responses as a stream of tokens using the "stream" parameter. When this is done, Mona will collect all the tokens in memory and will create the analysis and log out the data the moment the stream is over. You don't need to do anything to make this happen.
 
-Since for streaming responses OpenAI doesn't supply the full usage tokens summary. Mona uses the tiktoken package to calculate the tokens of the prompt and completion and log them for monitoring.
+Since for streaming responses OpenAI doesn't supply the full usage tokens summary, Mona uses the tiktoken package to calculate the tokens of the prompt and completion and log them for monitoring.
 
-NOTE: Stream is currently only supported with SDK usage, adn not with using REST directly.
+NOTE: Stream is currently only supported with SDK usage, and not with using REST directly.
 
 
 ## Mona SDK
