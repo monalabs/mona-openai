@@ -2,24 +2,7 @@
 A module with utility (usually higher order) functions for enriching
 and extending other functions' functionalities.
 """
-from types import MappingProxyType
 from random import random
-from inspect import iscoroutinefunction
-
-EMPTY_DICT = MappingProxyType({})
-
-
-async def call_non_blocking_sync_or_async(
-    function, func_args=(), func_kwargs=EMPTY_DICT
-):
-    """
-    A higher order function that allows calling both sync and async
-    functions as if they were async, avoid blocking when relevant, and
-    maintain one code base for both cases.
-    """
-    if iscoroutinefunction(function):
-        return await function(*func_args, **func_kwargs)
-    return function(*func_args, **func_kwargs)
 
 
 def add_conditional_sampling(inner_func, sampling_ratio):

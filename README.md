@@ -122,7 +122,7 @@ The specs arg allows you to configure what should be monitored. It expects a pyt
 * export_response_texts (False): Whether Mona should export the actual response texts. Be default set to False to avoid privacy concerns.
 * analysis: A dictionary mapping each analysis type to a boolean value telling the client whether or not to run said analysis and log it to Mona. Possible options currently are "privacy", "profanity", and "textual". By default, all analyses take place and are logged out to Mona.
 
-### on-going
+### Capabilities during API calls
 
 After wrapping your endpoint with `monitor`, you really don't need to do anything else. When using `create` or `acreate` data will be tracked and monitoring will take place.
 
@@ -208,6 +208,15 @@ except Exception as err:
     # Log exception to Mona
     exception_logger()
 ```
+
+### Stream support
+
+OpenAI allows receiving responses as a stream of tokens using the "stream" parameter. When this is done, Mona will collect all the tokens in memory and will create the analysis and log out the data the moment the stream is over. You don't need to do anything to make this happen.
+
+Since for streaming responses OpenAI doesn't supply the full usage tokens summary, Mona uses the tiktoken package to calculate the tokens of the prompt and completion and log them for monitoring.
+
+NOTE: Stream is currently only supported with SDK usage, and not with using REST directly.
+
 
 ## Mona SDK
 

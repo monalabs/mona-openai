@@ -29,22 +29,25 @@ from .mocks.mock_mona_client import get_mock_mona_clients_getter
 
 _DEFAULT_CONTEXT_CLASS = "TEST_CLASS"
 
+_DEFAULT_RESPONSE_TEXT = "\n\nMy name is"
+
+_DEFAULT_RESPONSE_COMMON_VARIABLES = {
+    "created": 1679231055,
+    "id": "cmpl-6vmzn6DUc2ZNjkyEvAyTf2tAgPl3A",
+    "model": "text-ada-001",
+    "object": "text_completion",
+}
 
 _DEFAULT_RESPONSE = {
     "choices": [
         {
             "finish_reason": "length",
             "index": 0,
-            "logprobs": None,
-            "text": "\n\nMy name is",
+            "text": _DEFAULT_RESPONSE_TEXT,
         }
     ],
-    "created": 1679231055,
-    "id": "cmpl-6vmzn6DUc2ZNjkyEvAyTf2tAgPl3A",
-    "model": "text-ada-001",
-    "object": "text_completion",
     "usage": {"completion_tokens": 5, "prompt_tokens": 8, "total_tokens": 13},
-}
+} | _DEFAULT_RESPONSE_COMMON_VARIABLES
 
 
 def _get_response_without_texts(response):
@@ -58,7 +61,7 @@ _DEFAULT_EXPORTED_RESPONSE = _get_response_without_texts(_DEFAULT_RESPONSE)
 
 _DEFAULT_INPUT = {
     "prompt": "I want to generate some text about ",
-    "engine": "text-ada-001",
+    "model": "text-ada-001",
     "temperature": 0.6,
     "n": 1,
     "max_tokens": 5,
@@ -103,6 +106,7 @@ def _get_mona_message(
     input=_DEFAULT_EXPORTED_INPUT,
     is_exception=False,
     is_async=False,
+    is_stream=None,
     response=_DEFAULT_EXPORTED_RESPONSE,
     analysis=_DEFAULT_ANALYSIS,
     context_class=_DEFAULT_CONTEXT_CLASS,
@@ -398,3 +402,159 @@ def test_additional_data():
             (_get_mona_message(additional_data=additional_data),), ()
         ),
     ).create(**new_input)
+
+
+def test_stream():
+    def response_generator():
+        words = _DEFAULT_RESPONSE_TEXT.split(" ")
+        last_index = len(words) - 1
+        for i, word in enumerate(words):
+            choice = {
+                "text": (word + " ") if i < last_index else word,
+                "index": 0,
+                "logprobs": None,
+                "finish_reason": None if i < last_index else "length",
+            }
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {"choices": [choice]}
+
+    input = deepcopy(_DEFAULT_INPUT)
+    input["stream"] = True
+
+    expected_input = deepcopy(input)
+    expected_input.pop("prompt")
+
+    for _ in monitor(
+        get_mock_openai_class(Completion, (response_generator(),), ()),
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (_get_mona_message(is_stream=True, input=expected_input),), ()
+        ),
+    ).create(**input):
+        pass
+
+
+def test_stream_multiple_answers():
+    def response_generator():
+        words = _DEFAULT_RESPONSE_TEXT.split(" ")
+        for i, word in enumerate(words):
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
+                "choices": [
+                    {
+                        "text": (word + " ") if i < len(words) - 1 else word,
+                        "index": 0,
+                        "logprobs": None,
+                        "finish_reason": None
+                        if i < len(words) - 1
+                        else "length",
+                    }
+                ]
+            }
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
+                "choices": [
+                    {
+                        "text": (word + " ") if i < len(words) - 1 else word,
+                        "index": 1,
+                        "logprobs": None,
+                        "finish_reason": None
+                        if i < len(words) - 1
+                        else "length",
+                    }
+                ]
+            }
+
+    input = deepcopy(_DEFAULT_INPUT)
+    input["stream"] = True
+    input["n"] = 2
+
+    expected_input = deepcopy(input)
+    expected_input.pop("prompt")
+
+    expected_response = deepcopy(_DEFAULT_EXPORTED_RESPONSE)
+    expected_response["choices"] += deepcopy(expected_response["choices"])
+    expected_response["choices"][1]["index"] = 1
+    expected_response["usage"] = {
+        "completion_tokens": 10,
+        "prompt_tokens": 8,
+        "total_tokens": 18,
+    }
+
+    new_analysis = {
+        "privacy": {
+            "prompt_phone_number_count": 0,
+            "answer_unknown_phone_number_count": (0, 0),
+            "prompt_email_count": 0,
+            "answer_unkown_email_count": (0, 0),
+        },
+        "textual": {
+            "prompt_length": 35,
+            "answer_length": (12, 12),
+            "prompt_word_count": 7,
+            "answer_word_count": (3, 3),
+            "prompt_preposition_count": 2,
+            "prompt_preposition_ratio": 0.2857142857142857,
+            "answer_preposition_count": (0, 0),
+            "answer_preposition_ratio": (0.0, 0.0),
+            "answer_words_not_in_prompt_count": (3, 3),
+            "answer_words_not_in_prompt_ratio": (1.0, 1.0),
+        },
+        "profanity": {
+            "prompt_profanity_prob": 0.05,
+            "answer_profanity_prob": (0.05, 0.05),
+        },
+    }
+
+    for _ in monitor(
+        get_mock_openai_class(Completion, (response_generator(),), ()),
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (
+                _get_mona_message(
+                    is_stream=True,
+                    input=expected_input,
+                    response=expected_response,
+                    analysis=new_analysis,
+                ),
+            ),
+            (),
+        ),
+    ).create(**input):
+        pass
+
+
+def test_stream_async():
+    async def response_generator():
+        words = _DEFAULT_RESPONSE_TEXT.split(" ")
+        for i, word in enumerate(words):
+            choice = {
+                "text": (word + " ") if i < len(words) - 1 else word,
+                "index": 0,
+                "logprobs": None,
+                "finish_reason": None if i < len(words) - 1 else "length",
+            }
+            yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {"choices": [choice]}
+
+    input = deepcopy(_DEFAULT_INPUT)
+    input["stream"] = True
+
+    expected_input = deepcopy(input)
+    expected_input.pop("prompt")
+
+    async def iterate_gen():
+        async for _ in await monitor(
+            get_mock_openai_class(Completion, (), (response_generator(),)),
+            (),
+            _DEFAULT_CONTEXT_CLASS,
+            mona_clients_getter=get_mock_mona_clients_getter(
+                (),
+                (
+                    _get_mona_message(
+                        is_stream=True, is_async=True, input=expected_input
+                    ),
+                ),
+            ),
+        ).acreate(**input):
+            pass
+
+    asyncio.run(iterate_gen())

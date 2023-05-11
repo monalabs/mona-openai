@@ -2,15 +2,23 @@ from deepdiff import DeepDiff
 from mona_sdk.client import Client
 
 
-def _copy_dict_without_latency(input_dict):
-    return {x: input_dict[x] for x in input_dict if x != "latency"}
+def _get_clean_dict(
+    input_dict, keys_to_remove=("latency", "stream_start_latency")
+):
+    # TODO(itai): While we can't really test latency values, we should try to
+    #   add a test for these fields' existence when relevant.
+    ret = {x: input_dict[x] for x in input_dict if x not in keys_to_remove}
+    for choice in ret.get("response", {"choices": ()})["choices"]:
+        # We don't support monitoring this field so no need to test for it.
+        choice.pop("logprobs", None)
+    return ret
 
 
 def _assert_message_equality(message_1, message_2):
+    message_1 = _get_clean_dict(message_1)
+    message_2 = _get_clean_dict(message_2)
     print(DeepDiff(message_1, message_2))
-    assert _copy_dict_without_latency(message_1) == _copy_dict_without_latency(
-        message_2
-    )
+    assert message_1 == message_2
 
 
 def _assert_export_num(expected_messages, export_num, last_message):
