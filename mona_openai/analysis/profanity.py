@@ -4,9 +4,11 @@ Logic to create profanity analysis.
 
 from profanity_check import predict_prob, predict
 
+_DECIMAL_PLACES = 2
+
 
 def _get_profanity_prob(texts):
-    return tuple(round(x, 2) for x in predict_prob(texts))
+    return tuple(round(x, _DECIMAL_PLACES) for x in predict_prob(texts))
 
 
 def _get_has_profanity(texts):
