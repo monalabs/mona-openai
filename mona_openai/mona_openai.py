@@ -4,6 +4,7 @@ from types import MappingProxyType
 
 from mona_sdk import MonaSingleMessage
 
+from .endpoints.wrapping_getter import get_endpoint_wrapping
 from .exceptions import WrongOpenAIClassException
 from .mona_client import get_mona_clients
 from .util.func_util import add_conditional_sampling
@@ -13,12 +14,6 @@ from .util.async_util import (
 )
 from .util.tokens_util import get_usage
 from .util.stream_util import ResponseGatheringIterator
-from .endpoints.completion import (
-    COMPLETION_CLASS_NAME,
-    get_completion_class,
-    get_analysis_params as completion_analysis_getter,
-    get_clean_message as completion_message_cleaner,
-)
 from .util.validation_util import validate_and_get_sampling_ratio
 
 EMPTY_DICT = MappingProxyType({})
@@ -27,23 +22,6 @@ MONA_ARGS_PREFIX = "MONA_"
 CONTEXT_ID_ARG_NAME = MONA_ARGS_PREFIX + "context_id"
 EXPORT_TIMESTAMP_ARG_NAME = MONA_ARGS_PREFIX + "export_timestamp"
 ADDITIONAL_DATA_ARG_NAME = MONA_ARGS_PREFIX + "additional_data"
-
-# TODO(Itai): This is essetially a nice-looking "switch" statement. We should
-#   try to use the name to find the exact monitoring-enrichment function and
-#   filename instead of listing all options here.
-ENDPOINT_NAME_TO_WRAPPER = {COMPLETION_CLASS_NAME: get_completion_class}
-
-
-def _get_monitored_base_class(openai_class):
-    """
-    Returns a class that wrapps the given api class with that
-    api-specific functionality.
-    """
-    class_name = openai_class.__name__
-
-    if class_name not in ENDPOINT_NAME_TO_WRAPPER:
-        raise WrongOpenAIClassException("Class not supported: " + class_name)
-    return ENDPOINT_NAME_TO_WRAPPER[class_name](openai_class)
 
 
 def _get_mona_single_message(
@@ -54,8 +32,7 @@ def _get_mona_single_message(
     is_async,
     stream_start_time,
     response,
-    analysis_params_getter,
-    specs,
+    analysis_getter,
     context_class,
     message_cleaner,
     additional_data,
@@ -83,11 +60,9 @@ def _get_mona_single_message(
 
     if response:
         message["response"] = response
-        message["analysis"] = analysis_params_getter(
-            request_input, response, specs
-        )
+        message["analysis"] = analysis_getter(request_input, response)
 
-    message = message_cleaner(message, specs)
+    message = message_cleaner(message)
 
     return MonaSingleMessage(
         message=message,
@@ -164,7 +139,9 @@ def monitor(
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
-    base_class = _get_monitored_base_class(openai_class)
+    base_class = get_endpoint_wrapping(
+        openai_class.__name__, specs
+    ).wrap_class(openai_class)
 
     # TODO(itai): Add call to Mona servers to init the context class if it
     #   isn't inited yet once we have the relevant endpoint for this.
@@ -206,8 +183,7 @@ def monitor(
                 is_async=is_async,
                 stream_start_time=stream_start_time,
                 response=response,
-                analysis_params_getter=super()._get_analysis_params,
-                specs=specs,
+                analysis_getter=super()._get_full_analysis,
                 context_class=context_class,
                 message_cleaner=super()._get_clean_message,
                 additional_data=kwargs_param.get(ADDITIONAL_DATA_ARG_NAME),
@@ -367,6 +343,8 @@ def get_rest_monitor(
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
+    wrapping_logic = get_endpoint_wrapping(openai_endpoint_name, specs)
+
     class RestClient:
         """
         This will be the returned Mona logging class. We follow
@@ -405,10 +383,9 @@ def get_rest_monitor(
                         # TODO(itai): Support stream in REST as well.
                         stream_start_time=None,
                         response=inner_response,
-                        analysis_params_getter=completion_analysis_getter,
-                        specs=specs,
+                        analysis_getter=wrapping_logic.get_full_analysis,
                         context_class=context_class,
-                        message_cleaner=completion_message_cleaner,
+                        message_cleaner=wrapping_logic.get_clean_message,
                         additional_data=additional_data,
                         context_id=context_id,
                         export_timestamp=export_timestamp,

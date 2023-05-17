@@ -19,7 +19,7 @@ ANALYSIS_TYPES_TO_FUNCTION = {
 }
 
 
-def get_full_analysis(prompt, answers, specs):
+def get_full_analysis(prompts, answers, specs):
     """
     Returns a dict mapping each analysis type to all related analysis
     fields for the given prompt and answers according to the given
@@ -31,7 +31,7 @@ def get_full_analysis(prompt, answers, specs):
         category.
     """
     return {
-        x: ANALYSIS_TYPES_TO_FUNCTION[x](prompt, answers)
+        x: ANALYSIS_TYPES_TO_FUNCTION[x](prompts, answers)
         for x in ANALYSIS_TYPES_TO_FUNCTION
         if specs.get("analysis", {}).get(x, True)
     }

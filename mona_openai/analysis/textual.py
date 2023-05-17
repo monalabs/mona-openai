@@ -8,6 +8,8 @@ caused by hallucinations or bugs.
 NOTE: There are many more analyses that can be added here.
 """
 
+from typing import Iterable
+
 from ..util.math import get_quotients
 
 PREPOSITIONS = set(
@@ -142,3 +144,29 @@ def get_full_textual_analysis(prompt, answers):
             answer_words_not_in_prompt_count, answer_words_counts
         ),
     }
+
+
+class TextualAnalyzer:
+    def __init__(self, text):
+        self._text = text
+        self._splitted = text.split()
+        self._prepositions = tuple(x for x in self._splitted if x in PREPOSITIONS)
+        
+    def get_length(self):
+        return len(self._text)
+    
+    def get_word_count(self):
+        return len(self._splitted)
+    
+    def get_preposition_count(self):
+        return len(self._prepositions)
+    
+    def get_preposition_ratio(self):
+        return self.get_preposition_count() / self.get_word_count() if len(self._text) else 0
+
+    def get_words_not_in_others_count(self, others: Iterable["TextualAnalyzer"]):
+        others_words_set = set().union(*tuple(other._splitted for other in others))
+        return len([word for word in self._splitted if word not in others_words_set])
+    
+def get_textual_analyzers(texts):
+    return tuple(TextualAnalyzer(text) for text in texts)

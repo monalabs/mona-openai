@@ -14,15 +14,31 @@ MONA_CREDS = {
     "key": MONA_API_KEY,
     "secret": MONA_SECRET,
 }
-CONTEXT_CLASS_NAME = "SOME_MONITORING_CONTEXT_NAME"
+COMPLETION_CONTEXT_CLASS_NAME = "MY_COMPLETION_USAGE"
+CHAT_COMPLETION_CONTEXT_CLASS_NAME = "MY_CHAT_USAGE"
 
 
 monitored_completion = monitor(
     openai.Completion,
     MONA_CREDS,
-    CONTEXT_CLASS_NAME,
+    COMPLETION_CONTEXT_CLASS_NAME,
 )
 
+monitored_chat_completion = monitor(
+    openai.ChatCompletion,
+    MONA_CREDS,
+    CHAT_COMPLETION_CONTEXT_CLASS_NAME
+)
+
+response = monitored_chat_completion.create(
+    messages=[{"role": "user", "content": ""}],
+    model="gpt-3.5-turbo",
+    max_tokens=100,
+    n=1,
+    temperature=0.3,
+)
+
+print(response.choices[0].message.content)
 
 prompt = "I want to generate some text about "
 model = "text-ada-001"
