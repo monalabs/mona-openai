@@ -25,9 +25,7 @@ monitored_completion = monitor(
 )
 
 monitored_chat_completion = monitor(
-    openai.ChatCompletion,
-    MONA_CREDS,
-    CHAT_COMPLETION_CONTEXT_CLASS_NAME
+    openai.ChatCompletion, MONA_CREDS, CHAT_COMPLETION_CONTEXT_CLASS_NAME
 )
 
 response = monitored_chat_completion.create(

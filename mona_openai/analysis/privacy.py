@@ -44,8 +44,6 @@ def _extract_all_emails(text):
     return set(re.findall(EMAIL_RE_PATTERN, text))
 
 
-
-
 class PrivacyAnalyzer:
     def __init__(self, text) -> None:
         self._text = text
@@ -87,6 +85,7 @@ class PrivacyAnalyzer:
         return self._get_previously_unseen_x_count(
             others, self._get_emails_from_instance
         )
+
 
 def get_privacy_analyzers(texts):
     return tuple(PrivacyAnalyzer(text) for text in texts)
