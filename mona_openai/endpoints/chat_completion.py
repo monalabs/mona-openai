@@ -89,14 +89,18 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
         combined_messages = create_combined_object(messages_privacy_analyzers)
         combined_answers = create_combined_object(answers_privacy_analyzers)
         ret = {
-            "total_prompt_phone_number_count": sum(combined_messages.get_phone_numbers_count()),
+            "total_prompt_phone_number_count": sum(
+                combined_messages.get_phone_numbers_count()
+            ),
             "answer_unknown_phone_number_count": combined_answers.get_previously_unseen_phone_numbers_count(
-                    messages_privacy_analyzers
-                ),
-            "total_prompt_email_count": sum(combined_messages.get_emails_count()),
+                messages_privacy_analyzers
+            ),
+            "total_prompt_email_count": sum(
+                combined_messages.get_emails_count()
+            ),
             "answer_unkown_email_count": combined_answers.get_previously_unseen_emails_count(
-                    messages_privacy_analyzers
-                ),
+                messages_privacy_analyzers
+            ),
         }
         if last_user_message_privacy_analyzer is not None:
             ret.update(
@@ -118,7 +122,9 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
         combined_messages = create_combined_object(messages_textual_analyzers)
         combined_answers = create_combined_object(answers_textual_analyzers)
         total_prompt_word_count = sum(combined_messages.get_word_count())
-        total_prompt_preposition_count = sum(combined_messages.get_preposition_count())
+        total_prompt_preposition_count = sum(
+            combined_messages.get_preposition_count()
+        )
 
         ret = {
             "total_prompt_length": sum(combined_messages.get_length()),
@@ -133,8 +139,8 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
             "answer_preposition_count": combined_answers.get_preposition_count(),
             "answer_preposition_ratio": combined_answers.get_preposition_ratio(),
             "answer_words_not_in_prompt_count": combined_answers.get_words_not_in_others_count(
-                    messages_textual_analyzers
-                ),
+                messages_textual_analyzers
+            ),
             "answer_words_not_in_prompt_ratio": tuple(
                 analyzer.get_words_not_in_others_count(
                     messages_textual_analyzers

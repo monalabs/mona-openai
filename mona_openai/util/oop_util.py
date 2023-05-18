@@ -3,6 +3,7 @@ Utility logic for object-oriented stuff.
 """
 import inspect
 
+
 def create_combined_object(instances):
     """
     Create a new object that has the same methods as the given instances.
@@ -18,6 +19,7 @@ def create_combined_object(instances):
     Returns:
         A new object that has the same methods as the given instances.
     """
+
     class CombinedObject:
         def __init__(self, instances):
             self.instances = instances
@@ -30,5 +32,7 @@ def create_combined_object(instances):
                     if inspect.ismethod(func) or inspect.isfunction(func):
                         results.append(func(*args, **kwargs))
                 return tuple(results)
+
             return method
+
     return CombinedObject(instances)

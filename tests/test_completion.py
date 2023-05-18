@@ -145,9 +145,13 @@ def test_basic():
         ),
     ).create(**_DEFAULT_INPUT)
 
+
 def test_multiple_prompts():
     new_input = deepcopy(_DEFAULT_INPUT)
-    new_input["prompt"] = ("I want to generate some text about ", "I also want to generate some text about ")
+    new_input["prompt"] = (
+        "I want to generate some text about ",
+        "I also want to generate some text about ",
+    )
     expected_input = deepcopy(new_input)
     expected_input.pop("prompt")
 
@@ -164,15 +168,15 @@ def test_multiple_prompts():
             "index": 1,
             "logprobs": None,
             "text": "\n\nMy thing is",
-        }
+        },
     ]
     new_expected_response = _get_response_without_texts(new_response)
 
     new_analysis = {
         "privacy": {
-            "prompt_phone_number_count": (0,0),
+            "prompt_phone_number_count": (0, 0),
             "answer_unknown_phone_number_count": (0, 0),
-            "prompt_email_count": (0,0),
+            "prompt_email_count": (0, 0),
             "answer_unkown_email_count": (0, 0),
         },
         "textual": {
@@ -194,7 +198,6 @@ def test_multiple_prompts():
             "answer_has_profanity": (False, False),
         },
     }
-
 
     monitor(
         get_mock_openai_class(Completion, (new_response,), ()),

@@ -76,10 +76,12 @@ PREPOSITIONS = set(
     )
 )
 
+
 class TextualAnalyzer:
     """
     An analyzer class that takes a text and provides methods to get analysis on that text such as length, word count, etc...
     """
+
     def __init__(self, text):
         self._text = text
         self._splitted = text.split()
