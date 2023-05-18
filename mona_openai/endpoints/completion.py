@@ -72,13 +72,19 @@ class CompletionWrapping(OpenAIEndpointWrappingLogic):
         combined_prompts = create_combined_object(prompts_privacy_analyzers)
         combined_answers = create_combined_object(answers_privacy_analyzers)
         return {
-            "prompt_phone_number_count": combined_prompts.get_phone_numbers_count(),
-            "answer_unknown_phone_number_count": combined_answers.get_previously_unseen_phone_numbers_count(
-                prompts_privacy_analyzers
+            "prompt_phone_number_count": (
+                combined_prompts.get_phone_numbers_count()
+            ),
+            "answer_unknown_phone_number_count": (
+                combined_answers.get_previously_unseen_phone_numbers_count(
+                    prompts_privacy_analyzers
+                )
             ),
             "prompt_email_count": combined_prompts.get_emails_count(),
-            "answer_unkown_email_count": combined_answers.get_previously_unseen_emails_count(
-                prompts_privacy_analyzers
+            "answer_unkown_email_count": (
+                combined_answers.get_previously_unseen_emails_count(
+                    prompts_privacy_analyzers
+                )
             ),
         }
 
@@ -94,12 +100,22 @@ class CompletionWrapping(OpenAIEndpointWrappingLogic):
             "answer_length": combined_answers.get_length(),
             "prompt_word_count": combined_prompts.get_word_count(),
             "answer_word_count": combined_answers.get_word_count(),
-            "prompt_preposition_count": combined_prompts.get_preposition_count(),
-            "prompt_preposition_ratio": combined_prompts.get_preposition_ratio(),
-            "answer_preposition_count": combined_answers.get_preposition_count(),
-            "answer_preposition_ratio": combined_answers.get_preposition_ratio(),
-            "answer_words_not_in_prompt_count": combined_answers.get_words_not_in_others_count(
-                prompts_textual_analyzers
+            "prompt_preposition_count": (
+                combined_prompts.get_preposition_count()
+            ),
+            "prompt_preposition_ratio": (
+                combined_prompts.get_preposition_ratio()
+            ),
+            "answer_preposition_count": (
+                combined_answers.get_preposition_count()
+            ),
+            "answer_preposition_ratio": (
+                combined_answers.get_preposition_ratio()
+            ),
+            "answer_words_not_in_prompt_count": (
+                combined_answers.get_words_not_in_others_count(
+                    prompts_textual_analyzers
+                )
             ),
             "answer_words_not_in_prompt_ratio": tuple(
                 analyzer.get_words_not_in_others_count(

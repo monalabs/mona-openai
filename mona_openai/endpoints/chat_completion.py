@@ -82,7 +82,7 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
     @_get_analyzers(get_privacy_analyzers)
     def _get_full_privacy_analysis(
         self,
-        last_user_message_privacy_analyzer,
+        last_user_message_analyzer,
         messages_privacy_analyzers,
         answers_privacy_analyzers,
     ):
@@ -92,21 +92,29 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
             "total_prompt_phone_number_count": sum(
                 combined_messages.get_phone_numbers_count()
             ),
-            "answer_unknown_phone_number_count": combined_answers.get_previously_unseen_phone_numbers_count(
-                messages_privacy_analyzers
+            "answer_unknown_phone_number_count": (
+                combined_answers.get_previously_unseen_phone_numbers_count(
+                    messages_privacy_analyzers
+                )
             ),
             "total_prompt_email_count": sum(
                 combined_messages.get_emails_count()
             ),
-            "answer_unkown_email_count": combined_answers.get_previously_unseen_emails_count(
-                messages_privacy_analyzers
+            "answer_unkown_email_count": (
+                combined_answers.get_previously_unseen_emails_count(
+                    messages_privacy_analyzers
+                )
             ),
         }
-        if last_user_message_privacy_analyzer is not None:
+        if last_user_message_analyzer is not None:
             ret.update(
                 {
-                    "last_user_message_phone_number_count": last_user_message_privacy_analyzer.get_phone_numbers_count(),
-                    "last_user_message_emails_count": last_user_message_privacy_analyzer.get_emails_count(),
+                    "last_user_message_phone_number_count": (
+                        last_user_message_analyzer.get_phone_numbers_count()
+                    ),
+                    "last_user_message_emails_count": (
+                        last_user_message_analyzer.get_emails_count()
+                    ),
                 }
             )
         return ret
@@ -115,7 +123,7 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
     @_get_analyzers(get_textual_analyzers)
     def _get_full_textual_analysis(
         self,
-        last_user_message_textual_analyzer,
+        last_user_message_analyzer,
         messages_textual_analyzers,
         answers_textual_analyzers,
     ):
@@ -136,10 +144,16 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
             / total_prompt_word_count
             if total_prompt_word_count != 0
             else None,
-            "answer_preposition_count": combined_answers.get_preposition_count(),
-            "answer_preposition_ratio": combined_answers.get_preposition_ratio(),
-            "answer_words_not_in_prompt_count": combined_answers.get_words_not_in_others_count(
-                messages_textual_analyzers
+            "answer_preposition_count": (
+                combined_answers.get_preposition_count()
+            ),
+            "answer_preposition_ratio": (
+                combined_answers.get_preposition_ratio()
+            ),
+            "answer_words_not_in_prompt_count": (
+                combined_answers.get_words_not_in_others_count(
+                    messages_textual_analyzers
+                )
             ),
             "answer_words_not_in_prompt_ratio": tuple(
                 analyzer.get_words_not_in_others_count(
@@ -150,13 +164,21 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
             ),
         }
 
-        if last_user_message_textual_analyzer != None:
+        if last_user_message_analyzer is not None:
             ret.update(
                 {
-                    "last_user_message_length": last_user_message_textual_analyzer.get_length(),
-                    "last_user_message_word_count": last_user_message_textual_analyzer.get_word_count(),
-                    "last_user_message_preposition_count": last_user_message_textual_analyzer.get_preposition_count(),
-                    "last_user_message_preposition_ratio": last_user_message_textual_analyzer.get_preposition_ratio(),
+                    "last_user_message_length": (
+                        last_user_message_analyzer.get_length()
+                    ),
+                    "last_user_message_word_count": (
+                        last_user_message_analyzer.get_word_count()
+                    ),
+                    "last_user_message_preposition_count": (
+                        last_user_message_analyzer.get_preposition_count()
+                    ),
+                    "last_user_message_preposition_ratio": (
+                        last_user_message_analyzer.get_preposition_ratio()
+                    ),
                 }
             )
 

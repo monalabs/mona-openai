@@ -5,7 +5,6 @@ from types import MappingProxyType
 from mona_sdk import MonaSingleMessage
 
 from .endpoints.wrapping_getter import get_endpoint_wrapping
-from .exceptions import WrongOpenAIClassException
 from .mona_client import get_mona_clients
 from .util.func_util import add_conditional_sampling
 from .util.async_util import (
@@ -289,7 +288,9 @@ def monitor(
                 # specific arguments.
                 return ResponseGatheringIterator(
                     original_iterator=await inner_super_function(),
-                    delta_choice_text_getter=base_class._get_stream_delta_text_from_choice,
+                    delta_choice_text_getter=(
+                        base_class._get_stream_delta_text_from_choice
+                    ),
                     final_choice_getter=base_class._get_final_choice,
                     callback=_stream_done_callback,
                 )

@@ -10,8 +10,8 @@ def create_combined_object(instances):
 
     This function takes an iterable of instances of a given class and returns
     a new object that has the same methods as the given instances. When calling
-    these methods, it returns a tuple containing all the results of running that
-    method for all instances.
+    these methods, it returns a tuple containing all the results of running
+    that method for all instances.
 
     Args:
         instances: An iterable of instances of a given class.

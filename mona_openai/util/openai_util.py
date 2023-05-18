@@ -1,5 +1,6 @@
 """
-Util logic for OpenAI related logic and language (e.g., dealing with API parameter names).
+Util logic for OpenAI related logic and language (e.g., dealing with API
+parameter names).
 """
 
 

@@ -1,3 +1,5 @@
+# TODO(itai): Add examples for chat completion, streaming, etc. Create a
+#   folder with all different examples in their own files.
 from os import environ
 import requests
 from mona_openai import get_rest_monitor

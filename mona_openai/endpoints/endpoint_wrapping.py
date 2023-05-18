@@ -31,7 +31,8 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
         validate_openai_class(openai_class, self._get_endpoint_name())
 
         class WrapperClass(openai_class):
-            # TODO(itai): Have a smarter way to "import" all the methods to this class instead of just copying them.
+            # TODO(itai): Have a smarter way to "import" all the methods to
+            #   this class instead of just copying them.
             @classmethod
             def _get_full_analysis(cls, input, response):
                 return self.get_full_analysis(input, response)
