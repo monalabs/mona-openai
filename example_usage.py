@@ -28,15 +28,24 @@ monitored_chat_completion = monitor(
     openai.ChatCompletion, MONA_CREDS, CHAT_COMPLETION_CONTEXT_CLASS_NAME
 )
 
-response = monitored_chat_completion.create(
-    messages=[{"role": "user", "content": ""}],
-    model="gpt-3.5-turbo",
-    max_tokens=100,
-    n=1,
-    temperature=0.3,
-)
+# async def bla():
+#     async for response in await monitored_completion.acreate(
+#         prompt=["gasdgas", "agdags"],
+#         model="text-ada-001",
+#         max_tokens=100,
+#         n=3,
+#         temperature=0.3,
+#         stream=True,
+#     ):
+#         print(response)
 
-print(response.choices[0].message.content)
+# asyncio.run(bla())
+
+
+# for x in response:
+#     print(x)
+
+# print(response.choices[0].message.content)
 
 prompt = "I want to generate some text about "
 model = "text-ada-001"
@@ -55,31 +64,31 @@ response = monitored_completion.create(
 )
 print(response.choices[0].text)
 
-# Async usage
-response = asyncio.run(
-    monitored_completion.acreate(
-        engine=model,
-        prompt=prompt,
-        max_tokens=max_tokens,
-        n=n,
-        temperature=temperature,
-        MONA_additional_data={"customer_id": "A531251"},
-    )
-)
+# # Async usage
+# response = asyncio.run(
+#     monitored_completion.acreate(
+#         engine=model,
+#         prompt=prompt,
+#         max_tokens=max_tokens,
+#         n=n,
+#         temperature=temperature,
+#         MONA_additional_data={"customer_id": "A531251"},
+#     )
+# )
 
-print(response.choices[0].text)
+# print(response.choices[0].text)
 
 # Direct REST usage, without OpenAI client
 
 # Get Mona logger
 mona_logger = get_rest_monitor(
-    "Completion",
+    "ChatCompletion",
     MONA_CREDS,
-    CONTEXT_CLASS_NAME,
+    CHAT_COMPLETION_CONTEXT_CLASS_NAME,
 )
 
 # Set up the API endpoint URL and authentication headers
-url = "https://api.openai.com/v1/completions"
+url = "https://api.openai.com/v1/chat/completions"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {environ.get('OPEN_AI_KEY')}",
@@ -87,10 +96,10 @@ headers = {
 
 # Set up the request data
 data = {
-    "prompt": prompt,
+    "messages": [{"role": "user", "content": "hi tehre"}],
     "max_tokens": max_tokens,
     "temperature": temperature,
-    "model": model,
+    "model": "gpt-3.5-turbo",
     "n": n,
 }
 
@@ -116,3 +125,4 @@ try:
 except Exception:
     # Log exception to Mona
     exception_logger()
+    raise

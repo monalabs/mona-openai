@@ -1,3 +1,6 @@
+"""
+A module for general logic for wrapping OpenAI endpoints.
+"""
 import abc
 from ..util.validation_util import validate_openai_class
 
@@ -27,7 +30,8 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
         """
         validate_openai_class(openai_class, self._get_endpoint_name())
 
-        class MonitoredCompletion(openai_class):
+        class WrapperClass(openai_class):
+            # TODO(itai): Have a smarter way to "import" all the methods to this class instead of just copying them.
             @classmethod
             def _get_full_analysis(cls, input, response):
                 return self.get_full_analysis(input, response)
@@ -36,7 +40,25 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
             def _get_clean_message(cls, message):
                 return self.get_clean_message(message)
 
-        return MonitoredCompletion
+            @classmethod
+            def _get_stream_delta_text_from_choice(cls, choice):
+                return self.get_stream_delta_text_from_choice(choice)
+
+            @classmethod
+            def _get_final_choice(cls, text):
+                return self.get_final_choice(text)
+
+            @classmethod
+            def _get_all_prompt_texts(cls, request):
+                return self.get_all_prompt_texts(request)
+
+            @classmethod
+            def _get_all_response_texts(cls, response):
+                return self.get_all_response_texts(response)
+
+        return type(
+            "Monitored" + self._get_endpoint_name(), (WrapperClass,), {}
+        )
 
     @abc.abstractmethod
     def _get_endpoint_name(self):
@@ -73,4 +95,20 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _get_full_profainty_analysis(self, input, response):
+        pass
+
+    @abc.abstractclassmethod
+    def get_stream_delta_text_from_choice(self, choice):
+        pass
+
+    @abc.abstractclassmethod
+    def get_final_choice(self, text):
+        pass
+
+    @abc.abstractclassmethod
+    def get_all_prompt_texts(self, request):
+        pass
+
+    @abc.abstractclassmethod
+    def get_all_response_texts(self, response):
         pass

@@ -68,8 +68,10 @@ class PrivacyAnalyzer:
         self, others: Iterable["PrivacyAnalyzer"], extraction_function
     ):
         return len(
-            set().union(*tuple(extraction_function(other) for other in others))
-            - extraction_function(self)
+            extraction_function(self)
+            - set().union(
+                *tuple(extraction_function(other) for other in others)
+            )
         )
 
     def get_previously_unseen_phone_numbers_count(

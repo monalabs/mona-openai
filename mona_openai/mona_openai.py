@@ -12,6 +12,7 @@ from .util.async_util import (
     run_in_an_event_loop,
     call_non_blocking_sync_or_async,
 )
+from .util.openai_util import get_model_param
 from .util.tokens_util import get_usage
 from .util.stream_util import ResponseGatheringIterator
 from .util.validation_util import validate_and_get_sampling_ratio
@@ -274,7 +275,11 @@ def monitor(
                 # There is no usage data in returned stream responses, so
                 # we add it here.
                 response = final_response | {
-                    "usage": get_usage(request=kwargs, response=final_response)
+                    "usage": get_usage(
+                        get_model_param(kwargs),
+                        base_class._get_all_prompt_texts(kwargs),
+                        base_class._get_all_response_texts(final_response),
+                    )
                 }
                 stream_start_time = actual_stream_start_time
                 await mona_export(False)
@@ -284,6 +289,8 @@ def monitor(
                 # specific arguments.
                 return ResponseGatheringIterator(
                     original_iterator=await inner_super_function(),
+                    delta_choice_text_getter=base_class._get_stream_delta_text_from_choice,
+                    final_choice_getter=base_class._get_final_choice,
                     callback=_stream_done_callback,
                 )
 
