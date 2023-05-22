@@ -45,15 +45,26 @@ def _extract_all_emails(text):
 
 
 class PrivacyAnalyzer:
+    """
+    An analyzer class that takes a text and provides functionality to extract
+    privacy-related metrics from that text.
+    """
+
     def __init__(self, text) -> None:
         self._text = text
         self._phone_numbers = _extract_phone_numbers(text)
         self._emails = _extract_all_emails(text)
 
     def get_phone_numbers_count(self):
+        """
+        Returns the number of phone numbers in the initially given text.
+        """
         return len(self._phone_numbers)
 
     def get_emails_count(self):
+        """
+        Returns the number of email addresses in the initially given text.
+        """
         return len(self._emails)
 
     @classmethod
@@ -77,6 +88,10 @@ class PrivacyAnalyzer:
     def get_previously_unseen_phone_numbers_count(
         self, others: Iterable["PrivacyAnalyzer"]
     ):
+        """
+        Returns the number of phone numbers in the initially given text, that
+        don't also appear in any of the given other analyzers.
+        """
         return self._get_previously_unseen_x_count(
             others, self._get_phone_numbers_from_instance
         )
@@ -84,10 +99,18 @@ class PrivacyAnalyzer:
     def get_previously_unseen_emails_count(
         self, others: Iterable["PrivacyAnalyzer"]
     ):
+        """
+        Returns the number of email addresses in the initially given text,
+        that don't also appear in any of the given other analyzers.
+        """
         return self._get_previously_unseen_x_count(
             others, self._get_emails_from_instance
         )
 
 
 def get_privacy_analyzers(texts):
+    """
+    Returns a tuple of PrivacyAnalyzer objects, one for each text in the given
+    iterable.
+    """
     return tuple(PrivacyAnalyzer(text) for text in texts)
