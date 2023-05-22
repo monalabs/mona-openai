@@ -19,10 +19,7 @@ MONA_CREDS = {
 CONTEXT_CLASS_NAME = "SOME_MONITORING_CONTEXT_NAME"
 
 
-result = openai.ChatCompletion.create(
-    messages=[],
-    model="gpt-3.5-turbo"
-)
+result = openai.ChatCompletion.create(messages=[], model="gpt-3.5-turbo")
 
 monitored_completion = monitor(
     openai.Completion,
