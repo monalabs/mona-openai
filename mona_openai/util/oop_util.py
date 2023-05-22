@@ -22,12 +22,12 @@ def create_combined_object(instances):
 
     class CombinedObject:
         def __init__(self, instances):
-            self.instances = instances
+            self._instances = instances
 
         def __getattr__(self, name):
             def method(*args, **kwargs):
                 results = []
-                for instance in self.instances:
+                for instance in self._instances:
                     func = getattr(instance, name)
                     if inspect.ismethod(func) or inspect.isfunction(func):
                         results.append(func(*args, **kwargs))

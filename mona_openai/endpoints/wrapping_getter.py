@@ -16,5 +16,5 @@ def get_endpoint_wrapping(endpoint_name, specs):
         return ENDPOINT_NAME_TO_WRAPPING[endpoint_name](specs)
     except KeyError:
         raise WrongOpenAIClassException(
-            "Not a supported class name: " + endpoint_name
+            f"Not a supported class name: {endpoint_name}"
         )

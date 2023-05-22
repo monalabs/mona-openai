@@ -1,5 +1,5 @@
 """
-The Mona wrapping code for OpenAI's Completion API.
+The Mona wrapping code for OpenAI's ChatCompletion API.
 """
 from copy import deepcopy
 from functools import wraps

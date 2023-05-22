@@ -275,9 +275,11 @@ def monitor(
                 # we add it here.
                 response = final_response | {
                     "usage": get_usage(
-                        get_model_param(kwargs),
-                        base_class._get_all_prompt_texts(kwargs),
-                        base_class._get_all_response_texts(final_response),
+                        model=get_model_param(kwargs),
+                        prompt_texts=base_class._get_all_prompt_texts(kwargs),
+                        response_texts=base_class._get_all_response_texts(
+                            final_response
+                        ),
                     )
                 }
                 stream_start_time = actual_stream_start_time

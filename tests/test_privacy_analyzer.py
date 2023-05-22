@@ -1,7 +1,7 @@
 from mona_openai.analysis.privacy import PrivacyAnalyzer
 
 
-def test_phone_numbers():
+def test_phone_numbers_count():
     assert (
         PrivacyAnalyzer(
             "Here's a phone number: +972584932014 and another one: "
@@ -11,7 +11,7 @@ def test_phone_numbers():
     )
 
 
-def test_emails():
+def test_emails_count():
     assert (
         PrivacyAnalyzer(
             "Here's an email: itai@monalabs.io and another one: "

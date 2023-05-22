@@ -83,9 +83,9 @@ class TextualAnalyzer:
 
     def __init__(self, text):
         self._text = text
-        self._splitted = text.split()
+        self._splitted_text = text.split()
         self._prepositions = tuple(
-            x for x in self._splitted if x in PREPOSITIONS
+            x for x in self._splitted_text if x in PREPOSITIONS
         )
 
     def get_length(self):
@@ -98,7 +98,7 @@ class TextualAnalyzer:
         """
         Returns the number of the words in the text.
         """
-        return len(self._splitted)
+        return len(self._splitted_text)
 
     def get_preposition_count(self):
         """
@@ -127,7 +127,11 @@ class TextualAnalyzer:
             *tuple(other._splitted for other in others)
         )
         return len(
-            [word for word in self._splitted if word not in others_words_set]
+            [
+                word
+                for word in self._splitted_text
+                if word not in others_words_set
+            ]
         )
 
 

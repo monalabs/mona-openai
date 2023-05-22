@@ -58,15 +58,23 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
                 return self.get_all_response_texts(response)
 
         return type(
-            "Monitored" + self._get_endpoint_name(), (WrapperClass,), {}
+            f"Monitored{self._get_endpoint_name()}", (WrapperClass,), {}
         )
 
     @abc.abstractmethod
     def _get_endpoint_name(self):
+        """
+        Returns the name of the OpenAI endpoint that is being wrapped.
+        """
         pass
 
     @abc.abstractmethod
     def get_clean_message(self, message):
+        """
+        Given a mona message, returns a "clean" message in the sense that it
+        will not hold any information that shouldn't be exported to Mona
+        (e.g., actual prompts).
+        """
         pass
 
     def get_full_analysis(self, input, response):
@@ -88,28 +96,51 @@ class OpenAIEndpointWrappingLogic(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _get_full_privacy_analysis(self, input, response):
+        """
+        Returns a dictionary with all calculated privacy analysis params.
+        """
         pass
 
     @abc.abstractmethod
     def _get_full_textual_analysis(self, input, response):
+        """
+        Returns a dictionary with all calculated textual analysis params.
+        """
         pass
 
     @abc.abstractmethod
     def _get_full_profainty_analysis(self, input, response):
+        """
+        Returns a dictionary with all calculated profanity analysis params.
+        """
         pass
 
     @abc.abstractclassmethod
     def get_stream_delta_text_from_choice(self, choice):
+        """
+        Given a stream response "choice", returns the text from that choice.
+        """
         pass
 
     @abc.abstractclassmethod
     def get_final_choice(self, text):
+        """
+        Returns a dictionary for a "choice" object as it would have been
+        received from OpenAI's API that holds the given text as the content.
+        """
         pass
 
     @abc.abstractclassmethod
     def get_all_prompt_texts(self, request):
+        """
+        Given a request object, returns all the prompt texts from that
+        request.
+        """
         pass
 
     @abc.abstractclassmethod
     def get_all_response_texts(self, response):
+        """
+        Given a response object, returns all the possible response texts.
+        """
         pass
