@@ -124,7 +124,7 @@ class TextualAnalyzer:
         given other texts.
         """
         others_words_set = set().union(
-            *tuple(other._splitted for other in others)
+            *tuple(other._splitted_text for other in others)
         )
         return len(
             [
