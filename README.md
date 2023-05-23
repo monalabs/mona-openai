@@ -76,7 +76,7 @@ response = asyncio.run(monitored_completion.acreate(
 print(response.choices[0].text)
 ```
 ## Supported OpenAI APIs
-Currently this client supports only `openai.Completion`. Mona can support processes based on other APIs and also non-OpenAI-based apps.
+Currently this client supports `openai.Completion` and `openai.ChatCompletion`. Mona can support processes based on other APIs and also non-OpenAI-based apps.
 If you have a differrent use-case, we'd love to hear about it! Please email us at support@monalabs.io.
 
 ## Usage
