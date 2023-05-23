@@ -1,10 +1,7 @@
 from os import environ
 import requests
 from mona_openai import get_rest_monitor
-import asyncio
 import openai
-
-from mona_openai import monitor
 
 openai.api_key = environ.get("OPEN_AI_KEY")
 
@@ -14,58 +11,22 @@ MONA_CREDS = {
     "key": MONA_API_KEY,
     "secret": MONA_SECRET,
 }
-CONTEXT_CLASS_NAME = "SOME_MONITORING_CONTEXT_NAME"
 
+# This is the name of the monitoring class on Mona
+CONTEXT_CLASS_NAME = "MONITORED_CHAT_COMPLETION_USE_CASE_NAME"
 
-monitored_completion = monitor(
-    openai.Completion,
-    MONA_CREDS,
-    CONTEXT_CLASS_NAME,
-)
-
-
-prompt = "I want to generate some text about "
-model = "text-ada-001"
-temperature = 0.6
-max_tokens = 5
-n = 1
-
-# Regular (sync) usage
-response = monitored_completion.create(
-    engine=model,
-    prompt=prompt,
-    max_tokens=max_tokens,
-    n=n,
-    temperature=temperature,
-    MONA_additional_data={"customer_id": "A531251"},
-)
-print(response.choices[0].text)
-
-# Async usage
-response = asyncio.run(
-    monitored_completion.acreate(
-        engine=model,
-        prompt=prompt,
-        max_tokens=max_tokens,
-        n=n,
-        temperature=temperature,
-        MONA_additional_data={"customer_id": "A531251"},
-    )
-)
-
-print(response.choices[0].text)
 
 # Direct REST usage, without OpenAI client
 
 # Get Mona logger
 mona_logger = get_rest_monitor(
-    "Completion",
+    "ChatCompletion",
     MONA_CREDS,
     CONTEXT_CLASS_NAME,
 )
 
 # Set up the API endpoint URL and authentication headers
-url = "https://api.openai.com/v1/completions"
+url = "https://api.openai.com/v1/chat/completions"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {environ.get('OPEN_AI_KEY')}",
@@ -73,11 +34,13 @@ headers = {
 
 # Set up the request data
 data = {
-    "prompt": prompt,
-    "max_tokens": max_tokens,
-    "temperature": temperature,
-    "model": model,
-    "n": n,
+    "messages": [
+        {"role": "user", "content": "I want to generate some text about "}
+    ],
+    "max_tokens": 20,
+    "temperature": 0.2,
+    "model": "gpt-3.5-turbo",
+    "n": 1,
 }
 
 # The log_request function returns two other function for later logging
@@ -97,7 +60,7 @@ try:
 
     # Log response to Mona
     response_logger(response.json())
-    print(response.json()["choices"][0]["text"])
+    print(response.json()["choices"][0]["message"]["content"])
 
 except Exception:
     # Log exception to Mona

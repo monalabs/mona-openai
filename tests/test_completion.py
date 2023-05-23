@@ -74,27 +74,27 @@ _DEFAULT_EXPORTED_INPUT = {
 
 _DEFAULT_ANALYSIS = {
     "privacy": {
-        "prompt_phone_number_count": 0,
+        "prompt_phone_number_count": (0,),
         "answer_unknown_phone_number_count": (0,),
-        "prompt_email_count": 0,
+        "prompt_email_count": (0,),
         "answer_unkown_email_count": (0,),
     },
     "textual": {
-        "prompt_length": 35,
+        "prompt_length": (35,),
         "answer_length": (12,),
-        "prompt_word_count": 7,
+        "prompt_word_count": (7,),
         "answer_word_count": (3,),
-        "prompt_preposition_count": 2,
-        "prompt_preposition_ratio": 0.2857142857142857,
+        "prompt_preposition_count": (2,),
+        "prompt_preposition_ratio": (0.2857142857142857,),
         "answer_preposition_count": (0,),
         "answer_preposition_ratio": (0.0,),
         "answer_words_not_in_prompt_count": (3,),
         "answer_words_not_in_prompt_ratio": (1.0,),
     },
     "profanity": {
-        "prompt_profanity_prob": 0.05,
+        "prompt_profanity_prob": (0.05,),
         "answer_profanity_prob": (0.05,),
-        "prompt_has_profanity": False,
+        "prompt_has_profanity": (False,),
         "answer_has_profanity": (False,),
     },
 }
@@ -102,6 +102,10 @@ _DEFAULT_ANALYSIS = {
 
 def _remove_none_values(dict):
     return {x: y for x, y in dict.items() if y is not None}
+
+
+def _get_mock_openai_class(*args, **kwargs):
+    return get_mock_openai_class(Completion, *args, **kwargs)
 
 
 def _get_mona_message(
@@ -137,13 +141,83 @@ def _get_mona_message(
 
 def test_basic():
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
             (_get_mona_message(),), ()
         ),
     ).create(**_DEFAULT_INPUT)
+
+
+def test_multiple_prompts():
+    new_input = deepcopy(_DEFAULT_INPUT)
+    new_input["prompt"] = (
+        "I want to generate some text about ",
+        "I also want to generate some text about ",
+    )
+    expected_input = deepcopy(new_input)
+    expected_input.pop("prompt")
+
+    new_response = deepcopy(_DEFAULT_RESPONSE)
+    new_response["choices"] = [
+        {
+            "finish_reason": "length",
+            "index": 0,
+            "logprobs": None,
+            "text": "\n\nMy name is",
+        },
+        {
+            "finish_reason": "length",
+            "index": 1,
+            "logprobs": None,
+            "text": "\n\nMy thing is",
+        },
+    ]
+    new_expected_response = _get_response_without_texts(new_response)
+
+    new_analysis = {
+        "privacy": {
+            "prompt_phone_number_count": (0, 0),
+            "answer_unknown_phone_number_count": (0, 0),
+            "prompt_email_count": (0, 0),
+            "answer_unkown_email_count": (0, 0),
+        },
+        "textual": {
+            "prompt_length": (35, 40),
+            "answer_length": (12, 13),
+            "prompt_word_count": (7, 8),
+            "answer_word_count": (3, 3),
+            "prompt_preposition_count": (2, 2),
+            "prompt_preposition_ratio": (0.2857142857142857, 0.25),
+            "answer_preposition_count": (0, 0),
+            "answer_preposition_ratio": (0.0, 0.0),
+            "answer_words_not_in_prompt_count": (3, 3),
+            "answer_words_not_in_prompt_ratio": (1.0, 1.0),
+        },
+        "profanity": {
+            "prompt_profanity_prob": (0.05, 0.05),
+            "answer_profanity_prob": (0.05, 0.01),
+            "prompt_has_profanity": (False, False),
+            "answer_has_profanity": (False, False),
+        },
+    }
+
+    monitor(
+        _get_mock_openai_class((new_response,), ()),
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (
+                _get_mona_message(
+                    response=new_expected_response,
+                    input=expected_input,
+                    analysis=new_analysis,
+                ),
+            ),
+            (),
+        ),
+    ).create(**new_input)
 
 
 def test_rest():
@@ -175,7 +249,7 @@ def test_rest_exception():
 
 def test_export_response_text():
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         {"export_response_texts": True},
@@ -187,7 +261,7 @@ def test_export_response_text():
 
 def test_export_prompt():
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         {"export_prompt": True},
@@ -200,7 +274,7 @@ def test_export_prompt():
 def test_bad_sampling_ratios():
     with pytest.raises(InvalidSamplingRatioException):
         monitor(
-            get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+            _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
             (),
             _DEFAULT_CONTEXT_CLASS,
             {"sampling_ratio": 1.1},
@@ -211,7 +285,7 @@ def test_bad_sampling_ratios():
 
     with pytest.raises(InvalidSamplingRatioException):
         monitor(
-            get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+            _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
             (),
             _DEFAULT_CONTEXT_CLASS,
             {"sampling_ratio": -1},
@@ -223,7 +297,7 @@ def test_bad_sampling_ratios():
 
 def test_async():
     monitored_completion = monitor(
-        get_mock_openai_class(Completion, (), (_DEFAULT_RESPONSE,)),
+        _get_mock_openai_class((), (_DEFAULT_RESPONSE,)),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -236,7 +310,7 @@ def test_async():
 
 def test_exception():
     monitored_completion = monitor(
-        get_mock_openai_class(Completion, (mockCreateExceptionCommand(),), ()),
+        _get_mock_openai_class((mockCreateExceptionCommand(),), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -255,7 +329,7 @@ def test_exception():
 
 def test_exception_without_monitoring():
     monitored_completion = monitor(
-        get_mock_openai_class(Completion, (mockCreateExceptionCommand(),), ()),
+        _get_mock_openai_class((mockCreateExceptionCommand(),), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         {"avoid_monitoring_exceptions": True},
@@ -269,7 +343,7 @@ def test_exception_without_monitoring():
 def test_context_id():
     context_id = "some_context_id"
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -281,7 +355,7 @@ def test_context_id():
 def test_export_timestamp():
     export_timestamp = 1679244447
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -294,7 +368,7 @@ def test_no_profanity():
     expected_analysis = deepcopy(_DEFAULT_ANALYSIS)
     expected_analysis.pop("profanity")
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         {"analysis": {"profanity": False}},
@@ -309,7 +383,7 @@ def test_no_textual_or_privacy():
     expected_analysis.pop("privacy")
     expected_analysis.pop("textual")
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         {"analysis": {"privacy": False, "textual": False}},
@@ -351,33 +425,33 @@ def test_multiple_answers():
 
     new_analysis = {
         "privacy": {
-            "prompt_phone_number_count": 0,
+            "prompt_phone_number_count": (0,),
             "answer_unknown_phone_number_count": (0, 0, 0),
-            "prompt_email_count": 0,
+            "prompt_email_count": (0,),
             "answer_unkown_email_count": (0, 0, 0),
         },
         "textual": {
-            "prompt_length": 35,
+            "prompt_length": (35,),
             "answer_length": (12, 13, 7),
-            "prompt_word_count": 7,
+            "prompt_word_count": (7,),
             "answer_word_count": (3, 3, 1),
-            "prompt_preposition_count": 2,
-            "prompt_preposition_ratio": 0.2857142857142857,
+            "prompt_preposition_count": (2,),
+            "prompt_preposition_ratio": (0.2857142857142857,),
             "answer_preposition_count": (0, 0, 0),
             "answer_preposition_ratio": (0.0, 0.0, 0.0),
             "answer_words_not_in_prompt_count": (3, 3, 1),
             "answer_words_not_in_prompt_ratio": (1.0, 1.0, 1.0),
         },
         "profanity": {
-            "prompt_profanity_prob": 0.05,
+            "prompt_profanity_prob": (0.05,),
             "answer_profanity_prob": (0.05, 0.01, 0.05),
-            "prompt_has_profanity": False,
+            "prompt_has_profanity": (False,),
             "answer_has_profanity": (False, False, False),
         },
     }
 
     monitor(
-        get_mock_openai_class(Completion, (new_response,), ()),
+        _get_mock_openai_class((new_response,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -399,7 +473,7 @@ def test_additional_data():
     new_input["MONA_additional_data"] = additional_data
 
     monitor(
-        get_mock_openai_class(Completion, (_DEFAULT_RESPONSE,), ()),
+        _get_mock_openai_class((_DEFAULT_RESPONSE,), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -428,7 +502,7 @@ def test_stream():
     expected_input.pop("prompt")
 
     for _ in monitor(
-        get_mock_openai_class(Completion, (response_generator(),), ()),
+        _get_mock_openai_class((response_generator(),), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -485,33 +559,33 @@ def test_stream_multiple_answers():
 
     new_analysis = {
         "privacy": {
-            "prompt_phone_number_count": 0,
+            "prompt_phone_number_count": (0,),
             "answer_unknown_phone_number_count": (0, 0),
-            "prompt_email_count": 0,
+            "prompt_email_count": (0,),
             "answer_unkown_email_count": (0, 0),
         },
         "textual": {
-            "prompt_length": 35,
+            "prompt_length": (35,),
             "answer_length": (12, 12),
-            "prompt_word_count": 7,
+            "prompt_word_count": (7,),
             "answer_word_count": (3, 3),
-            "prompt_preposition_count": 2,
-            "prompt_preposition_ratio": 0.2857142857142857,
+            "prompt_preposition_count": (2,),
+            "prompt_preposition_ratio": (0.2857142857142857,),
             "answer_preposition_count": (0, 0),
             "answer_preposition_ratio": (0.0, 0.0),
             "answer_words_not_in_prompt_count": (3, 3),
             "answer_words_not_in_prompt_ratio": (1.0, 1.0),
         },
         "profanity": {
-            "prompt_profanity_prob": 0.05,
+            "prompt_profanity_prob": (0.05,),
             "answer_profanity_prob": (0.05, 0.05),
-            "prompt_has_profanity": False,
+            "prompt_has_profanity": (False,),
             "answer_has_profanity": (False, False),
         },
     }
 
     for _ in monitor(
-        get_mock_openai_class(Completion, (response_generator(),), ()),
+        _get_mock_openai_class((response_generator(),), ()),
         (),
         _DEFAULT_CONTEXT_CLASS,
         mona_clients_getter=get_mock_mona_clients_getter(
@@ -549,7 +623,7 @@ def test_stream_async():
 
     async def iterate_gen():
         async for _ in await monitor(
-            get_mock_openai_class(Completion, (), (response_generator(),)),
+            _get_mock_openai_class((), (response_generator(),)),
             (),
             _DEFAULT_CONTEXT_CLASS,
             mona_clients_getter=get_mock_mona_clients_getter(

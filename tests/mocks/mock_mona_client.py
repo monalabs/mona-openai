@@ -15,6 +15,8 @@ def _get_clean_dict(
 
 
 def _assert_message_equality(message_1, message_2):
+    print(message_1)
+    print(message_2)
     message_1 = _get_clean_dict(message_1)
     message_2 = _get_clean_dict(message_2)
     print(DeepDiff(message_1, message_2))

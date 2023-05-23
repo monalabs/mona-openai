@@ -20,8 +20,16 @@ class ResponseGatheringIterator:
     joint code.
     """
 
-    def __init__(self, original_iterator, callback):
+    def __init__(
+        self,
+        delta_choice_text_getter,
+        final_choice_getter,
+        original_iterator,
+        callback,
+    ):
         self._original_iterator = original_iterator
+        self._delta_choice_text_getter = delta_choice_text_getter
+        self._final_choice_getter = final_choice_getter
         self._callback = callback
         self._initial_event_recieved_time = None
         self._common_response_information = None
@@ -99,9 +107,13 @@ class ResponseGatheringIterator:
         return self._common_response_information | {"choices": choices}
 
     def _get_full_choice(self, choice):
-        full_text = "".join(choice_event["text"] for choice_event in choice)
+        full_text = "".join(
+            self._delta_choice_text_getter(choice_event)
+            for choice_event in choice
+        )
+
         return {
-            "text": full_text,
+            **self._final_choice_getter(full_text),
             "index": choice[0]["index"],
             "finish_reason": choice[-1]["finish_reason"],
         }

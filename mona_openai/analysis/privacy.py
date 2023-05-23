@@ -1,3 +1,5 @@
+from typing import Iterable
+
 """
 Functionality for extracting privacy information from GAI responses
 when comparing to given input prompts.
@@ -19,11 +21,7 @@ EMAIL_RE_PATTERN = (
 )
 
 
-def _count_unknowns(prompt, answer, extract_func):
-    return len(extract_func(prompt) - extract_func(answer))
-
-
-def _extract_phone_numbers(prompt):
+def _extract_phone_numbers(text):
     """
     Extract phone numbers from a prompt string and return as a set.
     """
@@ -31,7 +29,7 @@ def _extract_phone_numbers(prompt):
     # We use "US" just as a default region in case there are no country codes
     # since we don't care about the formatting of the found number, but just
     # whether it is a phone number or not, this has no consequences.
-    for match in PhoneNumberMatcher(prompt, "US"):
+    for match in PhoneNumberMatcher(text, "US"):
         number_string = "+{}{}".format(
             match.number.country_code, match.number.national_number
         )
@@ -39,43 +37,80 @@ def _extract_phone_numbers(prompt):
     return phone_numbers
 
 
-def _count_unknown_phone_numbers(prompt, answer):
-    """
-    Count the number of phone numbers that appear in the prompt but
-    not in the input prompt.
-    """
-    return _count_unknowns(prompt, answer, _extract_phone_numbers)
-
-
-def _extract_all_emails(prompt):
+def _extract_all_emails(text):
     """
     returns all email addresses found in the given prompt.
     """
-    return set(re.findall(EMAIL_RE_PATTERN, prompt))
+    return set(re.findall(EMAIL_RE_PATTERN, text))
 
 
-def _count_unknown_emails(prompt, answer):
+class PrivacyAnalyzer:
     """
-    Returns the number of email addresses found in prompt and not in
-    the answer param.
+    An analyzer class that takes a text and provides functionality to extract
+    privacy-related metrics from that text.
     """
-    return _count_unknowns(prompt, answer, _extract_all_emails)
+
+    def __init__(self, text) -> None:
+        self._text = text
+        self._phone_numbers = _extract_phone_numbers(text)
+        self._emails = _extract_all_emails(text)
+
+    def get_phone_numbers_count(self):
+        """
+        Returns the number of phone numbers in the initially given text.
+        """
+        return len(self._phone_numbers)
+
+    def get_emails_count(self):
+        """
+        Returns the number of email addresses in the initially given text.
+        """
+        return len(self._emails)
+
+    @classmethod
+    def _get_phone_numbers_from_instance(cls, instance):
+        return instance._phone_numbers
+
+    @classmethod
+    def _get_emails_from_instance(cls, instance):
+        return instance._emails
+
+    def _get_previously_unseen_x_count(
+        self, others: Iterable["PrivacyAnalyzer"], extraction_function
+    ):
+        return len(
+            extraction_function(self)
+            - set().union(
+                *tuple(extraction_function(other) for other in others)
+            )
+        )
+
+    def get_previously_unseen_phone_numbers_count(
+        self, others: Iterable["PrivacyAnalyzer"]
+    ):
+        """
+        Returns the number of phone numbers in the initially given text, that
+        don't also appear in any of the given other analyzers.
+        """
+        return self._get_previously_unseen_x_count(
+            others, self._get_phone_numbers_from_instance
+        )
+
+    def get_previously_unseen_emails_count(
+        self, others: Iterable["PrivacyAnalyzer"]
+    ):
+        """
+        Returns the number of email addresses in the initially given text,
+        that don't also appear in any of the given other analyzers.
+        """
+        return self._get_previously_unseen_x_count(
+            others, self._get_emails_from_instance
+        )
 
 
-def get_full_privacy_analysis(prompt, answers):
+def get_privacy_analyzers(texts):
     """
-    Returns a dictionary with a full privacy analysis of the given
-    prompt, when comparing to the "answer" param.
+    Returns a tuple of PrivacyAnalyzer objects, one for each text in the given
+    iterable.
     """
-    # TODO(itai): Extract the phone numbers from the prompt just once
-    #   to improve efficiency.
-    return {
-        "prompt_phone_number_count": len(_extract_phone_numbers(prompt)),
-        "answer_unknown_phone_number_count": tuple(
-            _count_unknown_phone_numbers(prompt, answer) for answer in answers
-        ),
-        "prompt_email_count": len(_extract_all_emails(prompt)),
-        "answer_unkown_email_count": tuple(
-            _count_unknown_emails(prompt, answer) for answer in answers
-        ),
-    }
+    return tuple(PrivacyAnalyzer(text) for text in texts)
