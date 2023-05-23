@@ -20,6 +20,7 @@ monitored_completion = monitor(
     CONTEXT_CLASS_NAME,
 )
 
+
 async def openAI_logic():
     response = await monitored_completion.acreate(
         stream=True,
@@ -34,5 +35,6 @@ async def openAI_logic():
     )
     async for event in response:
         print(event.choices[0].text)
+
 
 asyncio.run(openAI_logic())

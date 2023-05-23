@@ -22,7 +22,9 @@ monitored_chat_completion = monitor(
 response = monitored_chat_completion.create(
     stream=True,
     model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": "I want to generate some text about "}],
+    messages=[
+        {"role": "user", "content": "I want to generate some text about "}
+    ],
     max_tokens=20,
     n=1,
     temperature=0.2,

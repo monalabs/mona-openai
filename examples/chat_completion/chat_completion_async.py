@@ -24,7 +24,9 @@ monitored_chat_completion = monitor(
 response = asyncio.run(
     monitored_chat_completion.acreate(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "I want to generate some text about "}],
+        messages=[
+            {"role": "user", "content": "I want to generate some text about "}
+        ],
         max_tokens=20,
         n=1,
         temperature=0.2,

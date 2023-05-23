@@ -20,11 +20,14 @@ monitored_chat_completion = monitor(
     CONTEXT_CLASS_NAME,
 )
 
+
 async def openAI_logic():
     response = await monitored_chat_completion.acreate(
         stream=True,
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "I want to generate some text about "}],
+        messages=[
+            {"role": "user", "content": "I want to generate some text about "}
+        ],
         max_tokens=20,
         n=1,
         temperature=0.2,
@@ -34,5 +37,6 @@ async def openAI_logic():
     )
     async for event in response:
         print(event.choices[0].delta.get("content", ""))
+
 
 asyncio.run(openAI_logic())
