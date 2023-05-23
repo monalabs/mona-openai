@@ -13,7 +13,7 @@ def get_mock_openai_class(original_class, create_responses, acreate_responses):
     number of calls.
     """
 
-    class MockCompletion(original_class):
+    class MockWrapper(original_class):
         _create_count = 0
         _acreate_count = 0
 
@@ -50,4 +50,4 @@ def get_mock_openai_class(original_class, create_responses, acreate_responses):
                 acreate_responses, cls._acreate_count
             )
 
-    return type(original_class.__name__, (MockCompletion,), {})
+    return type(original_class.__name__, (MockWrapper,), {})

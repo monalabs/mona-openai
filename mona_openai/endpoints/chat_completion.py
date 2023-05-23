@@ -68,13 +68,13 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
         new_message = deepcopy(message)
         if not self._specs.get("export_prompt", False):
             for input_message in new_message["input"]["messages"]:
-                input_message.pop("content")
+                input_message.pop("content", None)
 
         if "response" in message and not self._specs.get(
             "export_response_texts", False
         ):
             for choice in new_message["response"]["choices"]:
-                choice["message"].pop("content")
+                choice["message"].pop("content", None)
 
         return new_message
 
