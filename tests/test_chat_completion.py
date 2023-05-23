@@ -1,22 +1,15 @@
 """
 Tests for ChatCompletion api Mona wrapping.
 """
-import asyncio
 from copy import deepcopy
 
-import pytest
 from openai import ChatCompletion
 
-from mona_openai.exceptions import InvalidSamplingRatioException
 from mona_openai.mona_openai import (
-    CONTEXT_ID_ARG_NAME,
-    EXPORT_TIMESTAMP_ARG_NAME,
     monitor,
     get_rest_monitor,
 )
 from .mocks.mock_openai import (
-    mockCreateException,
-    mockCreateExceptionCommand,
     get_mock_openai_class,
 )
 from .mocks.mock_mona_client import get_mock_mona_clients_getter
@@ -37,7 +30,10 @@ _DEFAULT_RESPONSE = {
         {
             "finish_reason": "length",
             "index": 0,
-            "message": {"role": "assistant", "content": _DEFAULT_RESPONSE_TEXT,},
+            "message": {
+                "role": "assistant",
+                "content": _DEFAULT_RESPONSE_TEXT,
+            },
         }
     ],
     "usage": {
@@ -59,11 +55,14 @@ _DEFAULT_EXPORTED_RESPONSE = _get_response_without_texts(_DEFAULT_RESPONSE)
 
 _DEFAULT_INPUT = {
     "model": "gpt-3.5-turbo",
-    "messages": [{"role": "user", "content": "I want to generate some text about "}],
+    "messages": [
+        {"role": "user", "content": "I want to generate some text about "}
+    ],
     "max_tokens": 20,
     "n": 1,
     "temperature": 0.2,
 }
+
 
 # By default we don't export the prompt to Mona
 def _remove_text_content_from_input(input):
@@ -72,6 +71,7 @@ def _remove_text_content_from_input(input):
         message.pop("content", None)
 
     return new_input
+
 
 _DEFAULT_EXPORTED_INPUT = _remove_text_content_from_input(_DEFAULT_INPUT)
 
@@ -114,8 +114,10 @@ _DEFAULT_ANALYSIS = {
 def _remove_none_values(dict):
     return {x: y for x, y in dict.items() if y is not None}
 
+
 def _get_mock_openai_class(*args, **kwargs):
     return get_mock_openai_class(ChatCompletion, *args, **kwargs)
+
 
 def _get_mona_message(
     input=_DEFAULT_EXPORTED_INPUT,
@@ -161,8 +163,12 @@ def test_basic():
 
 def test_multiple_messages_not_ending_with_user_message():
     new_input = deepcopy(_DEFAULT_INPUT)
-    new_input["messages"] = [{"role": "system", "content": "you are an assistant"}] + new_input["messages"] + [{"role": "assistant", "content": "some initial answer"}]
-    
+    new_input["messages"] = (
+        [{"role": "system", "content": "you are an assistant"}]
+        + new_input["messages"]
+        + [{"role": "assistant", "content": "some initial answer"}]
+    )
+
     expected_input = _remove_text_content_from_input(new_input)
 
     new_analysis = {
@@ -185,8 +191,8 @@ def test_multiple_messages_not_ending_with_user_message():
             "answer_words_not_in_prompt_ratio": (1,),
         },
         "profanity": {
-            "prompt_profanity_prob": (0.05,0.05,0.02),
-            "prompt_has_profanity": (False,False,False),
+            "prompt_profanity_prob": (0.05, 0.05, 0.02),
+            "prompt_has_profanity": (False, False, False),
             "answer_profanity_prob": (0.05,),
             "answer_has_profanity": (False,),
         },
@@ -210,8 +216,15 @@ def test_multiple_messages_not_ending_with_user_message():
 
 def test_multiple_messages():
     new_input = deepcopy(_DEFAULT_INPUT)
-    new_input["messages"] = [{"role": "system", "content": "you are an assistant"}] + new_input["messages"] + [{"role": "assistant", "content": "some initial answer"}, {"role": "user", "content": "some user new prompt"}] 
-    
+    new_input["messages"] = (
+        [{"role": "system", "content": "you are an assistant"}]
+        + new_input["messages"]
+        + [
+            {"role": "assistant", "content": "some initial answer"},
+            {"role": "user", "content": "some user new prompt"},
+        ]
+    )
+
     expected_input = _remove_text_content_from_input(new_input)
 
     new_analysis = {
@@ -240,8 +253,8 @@ def test_multiple_messages():
             "last_user_message_preposition_ratio": 0,
         },
         "profanity": {
-            "prompt_profanity_prob": (0.05,0.05,0.02,0.03),
-            "prompt_has_profanity": (False,False,False,False),
+            "prompt_profanity_prob": (0.05, 0.05, 0.02, 0.03),
+            "prompt_has_profanity": (False, False, False, False),
             "answer_profanity_prob": (0.05,),
             "answer_has_profanity": (False,),
             "last_user_message_profanity_prob": 0.03,
@@ -327,19 +340,28 @@ def test_multiple_answers():
             "finish_reason": "length",
             "index": 0,
             "logprobs": None,
-            "message": {"role": "assistant", "content": "\n\nMy name is",},
+            "message": {
+                "role": "assistant",
+                "content": "\n\nMy name is",
+            },
         },
         {
             "finish_reason": "length",
             "index": 1,
             "logprobs": None,
-            "message": {"role": "assistant", "content": "\n\nMy thing is",},
+            "message": {
+                "role": "assistant",
+                "content": "\n\nMy thing is",
+            },
         },
         {
             "finish_reason": "length",
             "index": 2,
             "logprobs": None,
-            "message": {"role": "assistant", "content": "\n\nbladf",},
+            "message": {
+                "role": "assistant",
+                "content": "\n\nbladf",
+            },
         },
     ]
 
@@ -348,9 +370,9 @@ def test_multiple_answers():
     new_analysis = {
         "privacy": {
             "total_prompt_phone_number_count": 0,
-            "answer_unknown_phone_number_count": (0,0,0),
+            "answer_unknown_phone_number_count": (0, 0, 0),
             "total_prompt_email_count": 0,
-            "answer_unkown_email_count": (0,0,0),
+            "answer_unkown_email_count": (0, 0, 0),
             "last_user_message_phone_number_count": 0,
             "last_user_message_emails_count": 0,
         },
@@ -377,7 +399,7 @@ def test_multiple_answers():
             "answer_has_profanity": (False, False, False),
             "last_user_message_profanity_prob": 0.05,
             "last_user_message_has_profanity": False,
-        }
+        },
     }
 
     monitor(
@@ -395,6 +417,7 @@ def test_multiple_answers():
             (),
         ),
     ).create(**new_input)
+
 
 def test_stream():
     def response_generator():
@@ -432,7 +455,11 @@ def test_stream_multiple_answers():
             yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
                 "choices": [
                     {
-                        "delta": {"content": (word + " ") if i < len(words) - 1 else word},
+                        "delta": {
+                            "content": (word + " ")
+                            if i < len(words) - 1
+                            else word
+                        },
                         "index": 0,
                         "logprobs": None,
                         "finish_reason": None
@@ -444,7 +471,11 @@ def test_stream_multiple_answers():
             yield _DEFAULT_RESPONSE_COMMON_VARIABLES | {
                 "choices": [
                     {
-                        "delta": {"content": (word + " ") if i < len(words) - 1 else word},
+                        "delta": {
+                            "content": (word + " ")
+                            if i < len(words) - 1
+                            else word
+                        },
                         "index": 1,
                         "logprobs": None,
                         "finish_reason": None
@@ -472,9 +503,9 @@ def test_stream_multiple_answers():
     new_analysis = {
         "privacy": {
             "total_prompt_phone_number_count": 0,
-            "answer_unknown_phone_number_count": (0,0),
+            "answer_unknown_phone_number_count": (0, 0),
             "total_prompt_email_count": 0,
-            "answer_unkown_email_count": (0,0),
+            "answer_unkown_email_count": (0, 0),
             "last_user_message_phone_number_count": 0,
             "last_user_message_emails_count": 0,
         },
@@ -501,7 +532,7 @@ def test_stream_multiple_answers():
             "answer_has_profanity": (False, False),
             "last_user_message_profanity_prob": 0.05,
             "last_user_message_has_profanity": False,
-        }
+        },
     }
 
     for _ in monitor(
@@ -521,4 +552,3 @@ def test_stream_multiple_answers():
         ),
     ).create(**input):
         pass
-

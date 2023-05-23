@@ -103,8 +103,10 @@ _DEFAULT_ANALYSIS = {
 def _remove_none_values(dict):
     return {x: y for x, y in dict.items() if y is not None}
 
+
 def _get_mock_openai_class(*args, **kwargs):
     return get_mock_openai_class(Completion, *args, **kwargs)
+
 
 def _get_mona_message(
     input=_DEFAULT_EXPORTED_INPUT,
