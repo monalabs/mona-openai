@@ -12,7 +12,9 @@ MONA_CREDS = {
     "key": MONA_API_KEY,
     "secret": MONA_SECRET,
 }
-CONTEXT_CLASS_NAME = "MONITORED_COMPLETION_USE_CASE_NAME"
+
+# This is the name of the monitoring class on Mona
+CONTEXT_CLASS_NAME = "MONITORED_CHAT_COMPLETION_USE_CASE_NAME"
 
 monitored_chat_completion = monitor(
     openai.ChatCompletion,

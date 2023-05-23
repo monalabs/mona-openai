@@ -11,6 +11,8 @@ MONA_CREDS = {
     "key": MONA_API_KEY,
     "secret": MONA_SECRET,
 }
+
+# This is the name of the monitoring class on Mona
 CONTEXT_CLASS_NAME = "MONITORED_COMPLETION_USE_CASE_NAME"
 
 monitored_completion = monitor(
