@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mona-openai"
-version = "0.0.3"
+version = "0.0.4"
 authors = [
   { name="Itai Bar Sinai", email="itai@monalabs.io" },
 ]
