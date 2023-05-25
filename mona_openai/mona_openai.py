@@ -143,6 +143,8 @@ def monitor(
         openai_class.__name__, specs
     ).wrap_class(openai_class)
 
+    client.create_openai_context_class(context_class, openai_class.__name__)
+
     # TODO(itai): Add call to Mona servers to init the context class if it
     #   isn't inited yet once we have the relevant endpoint for this.
 
@@ -354,6 +356,8 @@ def get_rest_monitor(
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
     wrapping_logic = get_endpoint_wrapping(openai_endpoint_name, specs)
+    
+    client.create_openai_context_class(context_class, openai_endpoint_name)
 
     class RestClient:
         """
