@@ -371,7 +371,7 @@ def get_rest_monitor(
             export_timestamp=None,
         ):
             """
-            Actual logic for logging requests, responses and exceptions
+            Actual logic for logging requests, responses and exceptions.
             """
             start_time = time.time()
 
@@ -457,8 +457,8 @@ def get_rest_monitor(
             export_timestamp=None,
         ):
             """
-            Async version of "log_request". See docstring there for more
-            detail.
+            Async version of "log_request". See function's docstring for more
+            details.
             """
             return cls._inner_log_request(
                 async_client.export_async,
