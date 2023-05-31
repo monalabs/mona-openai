@@ -348,8 +348,7 @@ def get_rest_monitor(
     logging client to log requests, responses and exceptions.
     """
 
-    # TODO(itai): Consider creating an async version as well.
-    client, _ = mona_clients_getter(mona_creds)
+    client, async_client = mona_clients_getter(mona_creds)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
@@ -363,27 +362,23 @@ def get_rest_monitor(
         """
 
         @classmethod
-        def log_request(
+        def _inner_log_request(
             cls,
+            mona_export_function,
             request_dict,
             additional_data=None,
             context_id=None,
             export_timestamp=None,
         ):
             """
-            This function should be called with a request data dict,
-            for example, what you would use as "json" when using
-            "requests" to post.
-
-            It returns a response logging function to be used with the
-            response object.
+            Actual logic for logging requests, responses and exceptions
             """
             start_time = time.time()
 
             inner_response = None
 
             def _inner_mona_export(is_exception):
-                return client.export(
+                return mona_export_function(
                     _get_mona_single_message(
                         api_name=openai_endpoint_name,
                         request_input=request_dict,
@@ -424,12 +419,62 @@ def get_rest_monitor(
             return log_response, log_exception
 
         @classmethod
-        def get_mona_client(cls):
+        def log_request(
+            cls,
+            request_dict,
+            additional_data=None,
+            context_id=None,
+            export_timestamp=None,
+        ):
+            """
+            Sets up mona logging for OpenAI request/response objects.
+
+            This function should be called with a request data dict,
+            for example, what you would use as "json" when using
+            "requests" to post.
+
+            It returns a response logging function to be used with the
+            response object, as well as an exception logging function in case
+            of exceptions.
+
+            Note that this call does not log anything to Mona until one of the
+            returned callbacks is called.
+            """
+            return cls._inner_log_request(
+                client.export,
+                request_dict,
+                additional_data,
+                context_id,
+                export_timestamp,
+            )
+
+        @classmethod
+        def async_log_request(
+            cls,
+            request_dict,
+            additional_data=None,
+            context_id=None,
+            export_timestamp=None,
+        ):
+            """
+            Async version of "log_request". See docstring there for more
+            detail.
+            """
+            return cls._inner_log_request(
+                async_client.export_async,
+                request_dict,
+                additional_data,
+                context_id,
+                export_timestamp,
+            )
+
+        @classmethod
+        def get_mona_clients(cls):
             """
             Returns the two Mona client this class works with to allow
             exporting more data or communicating directly with Mona's
             API.
             """
-            return client
+            return client, async_client
 
     return RestClient

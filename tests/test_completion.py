@@ -231,6 +231,19 @@ def test_rest():
     ).log_request(_DEFAULT_INPUT)[0](_DEFAULT_RESPONSE)
 
 
+def test_rest_async():
+    asyncio.run(
+        get_rest_monitor(
+            Completion.__name__,
+            (),
+            _DEFAULT_CONTEXT_CLASS,
+            mona_clients_getter=get_mock_mona_clients_getter(
+                (), (_get_mona_message(),)
+            ),
+        ).async_log_request(_DEFAULT_INPUT)[0](_DEFAULT_RESPONSE)
+    )
+
+
 def test_rest_exception():
     get_rest_monitor(
         Completion.__name__,
@@ -245,6 +258,24 @@ def test_rest_exception():
             (),
         ),
     ).log_request(_DEFAULT_INPUT)[1]()
+
+
+def test_rest_exception_async():
+    asyncio.run(
+        get_rest_monitor(
+            Completion.__name__,
+            (),
+            _DEFAULT_CONTEXT_CLASS,
+            mona_clients_getter=get_mock_mona_clients_getter(
+                (),
+                (
+                    _get_mona_message(
+                        is_exception=True, response=None, analysis=None
+                    ),
+                ),
+            ),
+        ).async_log_request(_DEFAULT_INPUT)[1]()
+    )
 
 
 def test_export_response_text():
