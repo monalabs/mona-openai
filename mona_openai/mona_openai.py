@@ -74,14 +74,21 @@ def _get_mona_single_message(
 
 
 def _init_mona_class(client, context_class_name, openai_endpoint_name):
-    response = client.create_openai_context_class(context_class_name, openai_endpoint_name)
+    response = client.create_openai_context_class(
+        context_class_name, openai_endpoint_name
+    )
     if response.get("error_message", ""):
-        logging.warning(f"Problem initializing Mona context class: {response.get('error_message')}")
+        logging.warning(
+            "Problem initializing Mona context class: "
+            f"{response.get('error_message')}"
+        )
     logging.info("Made sure Mona context class is initialised")
     return response
 
+
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
 #   the specs param.
+
 
 def monitor(
     openai_class,
