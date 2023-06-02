@@ -77,12 +77,14 @@ def _init_mona_class(client, context_class_name, openai_endpoint_name):
     response = client.create_openai_context_class(
         context_class_name, openai_endpoint_name
     )
-    if response.get("error_message", ""):
+    error_message = response.get("error_message")
+    if error_message:
         logging.warning(
-            "Problem initializing Mona context class: "
-            f"{response.get('error_message')}"
+            f"Problem initializing Mona context class '{context_class_name}':"
+            f" {error_message}"
         )
-    logging.info("Made sure Mona context class is initialised")
+    else:
+        logging.info("Made sure Mona context class is initialised")
     return response
 
 
@@ -367,7 +369,6 @@ def get_rest_monitor(
 
     client, async_client = mona_clients_getter(mona_creds)
 
-    client.create_openai_context_class(context_class, openai_endpoint_name)
     _init_mona_class(client, context_class, openai_endpoint_name)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
