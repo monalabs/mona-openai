@@ -34,6 +34,9 @@ def _get_mock_mona_client(expected_export_messages):
         def __init__(self, *args, **kwargs):
             self._export_num = 0
 
+        def create_openai_context_class(self, context_class, openai_api_type):
+            return {}
+
         def export(self, message, filter_none_fields=None):
             _assert_export_num(
                 expected_export_messages, self._export_num, message

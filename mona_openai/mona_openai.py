@@ -84,7 +84,10 @@ def _init_mona_class(client, context_class_name, openai_endpoint_name):
             f" {error_message}"
         )
     else:
-        logging.info("Made sure Mona context class is initialised")
+        logging.info(
+            f"Made sure Mona context class '{context_class_name}' "
+            "is initialised"
+        )
     return response
 
 
