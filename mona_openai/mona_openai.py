@@ -1,4 +1,5 @@
 import time
+import logging
 from copy import deepcopy
 from types import MappingProxyType
 
@@ -72,6 +73,24 @@ def _get_mona_single_message(
     )
 
 
+def _init_mona_class(client, context_class_name, openai_endpoint_name):
+    response = client.create_openai_context_class(
+        context_class_name, openai_endpoint_name
+    )
+    error_message = response.get("error_message")
+    if error_message:
+        logging.warning(
+            f"Problem initializing Mona context class '{context_class_name}':"
+            f" {error_message}"
+        )
+    else:
+        logging.info(
+            f"Made sure Mona context class '{context_class_name}' "
+            "is initialised"
+        )
+    return response
+
+
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
 #   the specs param.
 
@@ -142,6 +161,8 @@ def monitor(
     base_class = get_endpoint_wrapping(
         openai_class.__name__, specs
     ).wrap_class(openai_class)
+
+    _init_mona_class(client, context_class, openai_class.__name__)
 
     # TODO(itai): Add call to Mona servers to init the context class if it
     #   isn't inited yet once we have the relevant endpoint for this.
@@ -334,6 +355,7 @@ def monitor(
 
 
 def get_rest_monitor(
+    # TODO(itai): Consider understanding endpoint name from complete url.
     openai_endpoint_name,
     mona_creds,
     context_class,
@@ -349,6 +371,8 @@ def get_rest_monitor(
     """
 
     client, async_client = mona_clients_getter(mona_creds)
+
+    _init_mona_class(client, context_class, openai_endpoint_name)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
