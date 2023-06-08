@@ -5,7 +5,7 @@ from copy import deepcopy
 from functools import wraps
 
 from ..analysis.privacy import get_privacy_analyzers
-from ..analysis.profanity import get_profanity_prob, get_has_profanity
+from ..analysis.profanity import get_has_profanity, get_profanity_prob
 from ..analysis.textual import get_textual_analyzers
 from ..util.oop_util import create_combined_object
 from .endpoint_wrapping import OpenAIEndpointWrappingLogic
@@ -122,6 +122,8 @@ class CompletionWrapping(OpenAIEndpointWrappingLogic):
                     prompts_textual_analyzers
                 )
                 / analyzer.get_word_count()
+                if analyzer.get_word_count() > 0
+                else 0.0
                 for analyzer in answers_textual_analyzers
             ),
         }
