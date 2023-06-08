@@ -123,6 +123,8 @@ class CompletionWrapping(OpenAIEndpointWrappingLogic):
                 )
                 / analyzer.get_word_count()
                 for analyzer in answers_textual_analyzers
+                if analyzer.get_word_count() > 0
+                else 0.0
             ),
         }
 
