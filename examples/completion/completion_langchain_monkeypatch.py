@@ -12,7 +12,7 @@ MONA_CREDS = {
     "secret": MONA_SECRET,
 }
 
-# This is the name of the monitoring class on Mona
+# This is the name of the monitoring class on Mona.
 CONTEXT_CLASS_NAME = "MONITORED_COMPLETION_USE_CASE_NAME"
 
 openai.Completion = monitor(
@@ -24,8 +24,4 @@ openai.Completion = monitor(
 # Note that we have to create the LLM object after monkey-patching
 # openai.Completion.
 llm = OpenAI(openai_api_key=environ.get("OPEN_AI_KEY"))
-print(
-    llm.predict(
-        "What would be a good company name for a company that makes colorful socks?"
-    )
-)
+print(llm.predict("What would be a good company name?"))

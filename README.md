@@ -221,7 +221,7 @@ NOTE: Stream is currently only supported with SDK usage, and not with using REST
 
 ### Langchain support
 
-We currently only support monitoring OpenAI endpoints when using Langchain via monkey-patching the openai.Completion or openai.ChatCompletion before creating the LLM object. See completion_langchain_monkeypatch.py for an example.
+We currently only support monitoring OpenAI endpoints when using Langchain via monkey-patching. See completion_langchain_monkeypatch.py for an example.
 
 A more robust Langchain integration is in the works.
 
