@@ -219,6 +219,11 @@ Since for streaming responses OpenAI doesn't supply the full usage tokens summar
 
 NOTE: Stream is currently only supported with SDK usage, and not with using REST directly.
 
+### Langchain support
+
+We currently only support monitoring OpenAI endpoints when using Langchain via monkey-patching the openai.Completion or openai.ChatCompletion before creating the LLM object. See completion_langchain_monkeypatch.py for an example.
+
+A more robust Langchain integration is in the works.
 
 ## Mona SDK
 
