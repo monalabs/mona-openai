@@ -220,9 +220,9 @@ Since for streaming responses OpenAI doesn't supply the full usage tokens summar
 
 NOTE: Stream is currently only supported with SDK usage, and not with using REST directly.
 
-## Langchain support
+## LangChain support
 
-You can use the exported `monitor_langchain_llm` to wrap a Langchain OpenAI LLM (chat or normal) with Mona's monitoring capabilities.:
+You can use the exported `monitor_langchain_llm` to wrap a LangChain OpenAI LLM (chat or normal) with Mona's monitoring capabilities.:
 
 ```py
 from mona_openai import monitor_langchain_llm
