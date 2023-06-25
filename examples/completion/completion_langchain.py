@@ -14,7 +14,7 @@ MONA_CREDS = {
     "secret": MONA_SECRET,
 }
 
-# This is the name of the monitoring class on Mona
+# This is the name of the monitoring class on Mona.
 CONTEXT_CLASS_NAME = "MONITORED_LANGCHAIN_LLM"
 
 # Wrap the LLM object with Mona monitoring.

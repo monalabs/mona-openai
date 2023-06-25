@@ -222,15 +222,14 @@ NOTE: Stream is currently only supported with SDK usage, and not with using REST
 
 ## LangChain support
 
-You can use the exported `monitor_langchain_llm` to wrap a LangChain OpenAI LLM (chat or normal) with Mona's monitoring capabilities.:
+You can use the exported `monitor_langchain_llm` to wrap a LangChain OpenAI LLM (chat or normal) with Mona's monitoring capabilities:
 
 ```py
 from mona_openai import monitor_langchain_llm
 
 from langchain.llms import OpenAI
 
-# Loading Mona credetntials etc...
-
+# Wrap the LLM object with Mona monitoring.
 llm = monitor_langchain_llm(
     OpenAI(OPEN_AI_KEY),
     MONA_CREDS,
