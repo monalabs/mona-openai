@@ -11,7 +11,8 @@ Use one line of code to get instant live monitoring for your OpenAI usage includ
 * Hallucination alerts
 * Profanity and privacy analyses
 * Behavioral drifts and anomalies
-* Much much more.
+* LangChain support
+* Much much more
 
 ## Setting Up
 
@@ -219,11 +220,23 @@ Since for streaming responses OpenAI doesn't supply the full usage tokens summar
 
 NOTE: Stream is currently only supported with SDK usage, and not with using REST directly.
 
-### Langchain support
+## LangChain support
 
-We currently only support monitoring OpenAI endpoints when using Langchain via monkey-patching. See completion_langchain_monkeypatch.py for an example.
+You can use the exported `monitor_langchain_llm` to wrap a LangChain OpenAI LLM (chat or normal) with Mona's monitoring capabilities:
 
-A more robust Langchain integration is in the works.
+```py
+from mona_openai import monitor_langchain_llm
+
+from langchain.llms import OpenAI
+
+# Wrap the LLM object with Mona monitoring.
+llm = monitor_langchain_llm(
+    OpenAI(OPEN_AI_KEY),
+    MONA_CREDS,
+    CONTEXT_CLASS_NAME)
+```
+
+See full example in completion_langchain.py in the examples folder.
 
 ## Mona SDK
 

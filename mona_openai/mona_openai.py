@@ -5,6 +5,7 @@ from types import MappingProxyType
 
 from mona_sdk import MonaSingleMessage
 
+from .exceptions import InvalidLagnchainLLMException
 from .endpoints.wrapping_getter import get_endpoint_wrapping
 from .mona_client import get_mona_clients
 from .util.func_util import add_conditional_sampling
@@ -502,3 +503,20 @@ def get_rest_monitor(
             return client, async_client
 
     return RestClient
+
+
+def monitor_langchain_llm(
+    llm,
+    mona_creds,
+    context_class,
+    specs=EMPTY_DICT,
+    mona_clients_getter=get_mona_clients,
+):
+    if not hasattr(llm, "client"):
+        raise InvalidLagnchainLLMException(
+            "LLM has no client attribute - must be an OpenAI LLM"
+        )
+    llm.client = monitor(
+        llm.client, mona_creds, context_class, specs, mona_clients_getter
+    )
+    return llm

@@ -8,3 +8,7 @@ class InvalidSamplingRatioException(Exception):
 
 class InvalidMonaCredsException(Exception):
     pass
+
+
+class InvalidLagnchainLLMException(Exception):
+    pass
