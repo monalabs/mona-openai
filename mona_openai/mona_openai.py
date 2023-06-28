@@ -1,5 +1,5 @@
 import time
-import logging
+from .loggers.mona_logger.mona_logger import MonaLogger
 from copy import deepcopy
 from types import MappingProxyType
 
@@ -7,7 +7,7 @@ from mona_sdk import MonaSingleMessage
 
 from .exceptions import InvalidLagnchainLLMException
 from .endpoints.wrapping_getter import get_endpoint_wrapping
-from .mona_client import get_mona_clients
+from .loggers.mona_logger.mona_client import get_mona_clients
 from .util.func_util import add_conditional_sampling
 from .util.async_util import (
     run_in_an_event_loop,
@@ -25,9 +25,7 @@ CONTEXT_ID_ARG_NAME = MONA_ARGS_PREFIX + "context_id"
 EXPORT_TIMESTAMP_ARG_NAME = MONA_ARGS_PREFIX + "export_timestamp"
 ADDITIONAL_DATA_ARG_NAME = MONA_ARGS_PREFIX + "additional_data"
 
-
-def _get_mona_single_message(
-    api_name,
+def _get_logging_message(api_name,
     request_input,
     start_time,
     is_exception,
@@ -35,11 +33,8 @@ def _get_mona_single_message(
     stream_start_time,
     response,
     analysis_getter,
-    context_class,
     message_cleaner,
     additional_data,
-    context_id,
-    export_timestamp,
 ):
     """
     Returns a MonaSingleMessage object to be used for data
@@ -64,32 +59,7 @@ def _get_mona_single_message(
         message["response"] = response
         message["analysis"] = analysis_getter(request_input, response)
 
-    message = message_cleaner(message)
-
-    return MonaSingleMessage(
-        message=message,
-        contextClass=context_class,
-        contextId=context_id,
-        exportTimestamp=export_timestamp,
-    )
-
-
-def _init_mona_class(client, context_class_name, openai_endpoint_name):
-    response = client.create_openai_context_class(
-        context_class_name, openai_endpoint_name
-    )
-    error_message = response.get("error_message")
-    if error_message:
-        logging.warning(
-            f"Problem initializing Mona context class '{context_class_name}':"
-            f" {error_message}"
-        )
-    else:
-        logging.info(
-            f"Made sure Mona context class '{context_class_name}' "
-            "is initialised"
-        )
-    return response
+    return message_cleaner(message)
 
 
 # TODO(itai): Consider creating some sturct (as NamedTuple or dataclass) for
@@ -104,10 +74,29 @@ def monitor(
     mona_clients_getter=get_mona_clients,
 ):
     """
-    Returns a Wrapped version of a given OpenAI class with mona
-    monitoring logic.
-    This is the main exposed function of the mona_openai package and
-    probably the only thing you need to use from this package.
+    A simple wrapper around "monitor_with_logger" to use with a Mona logger.
+    See "monitor_with_logger" for full documentation.
+
+    Args:
+        openai_class: An OpenAI API class to wrap with monitoring
+            capabilties.
+        mona_creds: Either a dict or pair of Mona API key and secret to
+            set up Mona's clients from its SDK
+        context_class: The Mona context class name to use for
+            monitoring. Use a name of your choice.
+        specs: A dictionary of specifications such as monitoring
+            sampling ratio.
+        mona_clients_getter: Used only for testing purposes.
+    """
+    return monitor_with_logger(openai_class, MonaLogger(mona_creds, context_class, mona_clients_getter), specs)
+
+def monitor_with_logger(
+        openai_class,
+        logger,
+        specs
+):
+    """
+    Returns a Wrapped version of a given OpenAI class with monitoring logic.
 
     You can use the returned class' "create" and "acreate" functions
     exactly as you would the original class, and monitoring will be
@@ -117,6 +106,9 @@ def monitor(
     prompt and response lengths, number of tokens, etc., along with any
     endpoint parameter usage (e.g., it tracks the "temperature" and
     "max_tokens" params you use).
+
+    The logic for what to do with the calculated analysis data is set by the 
+    given logger object.
 
     You can also add other named args when calling "create" or
     "acreate" by using a new named argument called
@@ -135,27 +127,14 @@ def monitor(
         MONA_export_timestamp: Can be used to simulate as if the
             current call was made in a different time, as far as Mona
             is concerned.
-
-    The returned monitored class also exposes a new class method called
-    "get_mona_clients", which allows you to retrieve the clients and
-    use them to export more data or communicate directly with Mona's
-    API
-
-    Read more about Mona and how to use it in Mona's docs on
-    https://docs.monalabs.io.
-
+    
     Args:
         openai_class: An OpenAI API class to wrap with monitoring
             capabilties.
-        mona_creds: Either a dict or pair of Mona API key and secret to
-            set up Mona's clients from its SDK
-        context_class: The Mona context class name to use for
-            monitoring. Use a name of your choice.
+        logger: A logger object used to log out the calculated analysis.
         specs: A dictionary of specifications such as monitoring
             sampling ratio.
-        mona_clients_getter: Used only for testing purposes
     """
-    client, async_client = mona_clients_getter(mona_creds)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
@@ -163,7 +142,7 @@ def monitor(
         openai_class.__name__, specs
     ).wrap_class(openai_class)
 
-    _init_mona_class(client, context_class, openai_class.__name__)
+    logger.start_monitoring(openai_class.__name__)
 
     # TODO(itai): Add call to Mona servers to init the context class if it
     #   isn't inited yet once we have the relevant endpoint for this.
@@ -174,7 +153,7 @@ def monitor(
         """
 
         @classmethod
-        def _get_mona_single_message(
+        def _get_logging_message(
             cls,
             kwargs_param,
             start_time,
@@ -184,8 +163,7 @@ def monitor(
             response,
         ):
             """
-            Returns a MonaSingleMessage object to be used for data
-            exporting to Mona's servers by a Mona client.
+            Returns a dict to be used for data logging.
             """
             # Recreate the input dict to avoid manipulating the caller's data,
             # and remove Mona-related data.
@@ -197,7 +175,7 @@ def monitor(
                 }
             )
 
-            return _get_mona_single_message(
+            return _get_logging_message(
                 api_name=openai_class.__name__,
                 request_input=request_input,
                 start_time=start_time,
@@ -206,15 +184,8 @@ def monitor(
                 stream_start_time=stream_start_time,
                 response=response,
                 analysis_getter=super()._get_full_analysis,
-                context_class=context_class,
                 message_cleaner=super()._get_clean_message,
                 additional_data=kwargs_param.get(ADDITIONAL_DATA_ARG_NAME),
-                context_id=kwargs_param.get(
-                    CONTEXT_ID_ARG_NAME, response["id"] if response else None
-                ),
-                export_timestamp=kwargs_param.get(
-                    EXPORT_TIMESTAMP_ARG_NAME, start_time
-                ),
             )
 
         @classmethod
@@ -237,11 +208,11 @@ def monitor(
             # will be used only when stream is enabled
             stream_start_time = None
 
-            async def _inner_mona_export(is_exception):
+            async def _inner_log_message(is_exception):
                 return await call_non_blocking_sync_or_async(
                     export_function,
                     (
-                        cls._get_mona_single_message(
+                        cls._get_logging_message(
                             kwargs,
                             start_time,
                             is_exception,
@@ -249,11 +220,17 @@ def monitor(
                             stream_start_time,
                             response,
                         ),
+                        kwargs.get(
+                            CONTEXT_ID_ARG_NAME, response["id"] if response else None
+                        ),
+                        kwargs.get(
+                            EXPORT_TIMESTAMP_ARG_NAME, start_time
+                        ),
                     ),
                 )
 
-            mona_export = add_conditional_sampling(
-                _inner_mona_export, sampling_ratio
+            log_message = add_conditional_sampling(
+                _inner_log_message, sampling_ratio
             )
 
             start_time = time.time()
@@ -273,7 +250,7 @@ def monitor(
 
             async def inner_handle_exception():
                 if not specs.get("avoid_monitoring_exceptions", False):
-                    await mona_export(True)
+                    await log_message(True)
 
             if not is_stream:
                 try:
@@ -282,7 +259,7 @@ def monitor(
                     await inner_handle_exception()
                     raise
 
-                await mona_export(False)
+                await log_message(False)
 
                 return response
 
@@ -305,7 +282,7 @@ def monitor(
                     )
                 }
                 stream_start_time = actual_stream_start_time
-                await mona_export(False)
+                await log_message(False)
 
             try:
                 # Call the actual openai create function without the Mona
@@ -330,7 +307,7 @@ def monitor(
             function.
             """
             return run_in_an_event_loop(
-                cls._inner_create(client.export, super().create, args, kwargs)
+                cls._inner_create(logger.log, super().create, args, kwargs)
             )
 
         @classmethod
@@ -340,28 +317,31 @@ def monitor(
             "acreate" function.
             """
             return await cls._inner_create(
-                async_client.export_async, super().acreate, args, kwargs
+                logger.alog, super().acreate, args, kwargs
             )
 
-        @classmethod
-        def get_mona_clients(cls):
-            """
-            Returns the two Mona clients this class works with to allow
-            exporting more data or communicating directly with Mona's
-            API.
-            """
-            return (client, async_client)
 
     return type(base_class.__name__, (MonitoredOpenAI,), {})
 
-
 def get_rest_monitor(
-    # TODO(itai): Consider understanding endpoint name from complete url.
     openai_endpoint_name,
     mona_creds,
     context_class,
     specs=EMPTY_DICT,
     mona_clients_getter=get_mona_clients,
+):
+    """
+    A wrapper around get_rest_monitor_with_logger that automatically uses
+    a Mona logger.
+    """
+    return get_rest_monitor_with_logger(openai_endpoint_name, MonaLogger(mona_creds, context_class, mona_clients_getter), specs)
+
+
+def get_rest_monitor_with_logger(
+    # TODO(itai): Consider understanding endpoint name from complete url.
+    openai_endpoint_name,
+    logger,
+    specs=EMPTY_DICT
 ):
     """
     Returns a client class for monitoring OpenAI REST calls not done
@@ -371,9 +351,7 @@ def get_rest_monitor(
     logging client to log requests, responses and exceptions.
     """
 
-    client, async_client = mona_clients_getter(mona_creds)
-
-    _init_mona_class(client, context_class, openai_endpoint_name)
+    logger.start_monitoring(openai_endpoint_name)
 
     sampling_ratio = validate_and_get_sampling_ratio(specs)
 
@@ -389,7 +367,7 @@ def get_rest_monitor(
         @classmethod
         def _inner_log_request(
             cls,
-            mona_export_function,
+            message_logging_function,
             request_dict,
             additional_data=None,
             context_id=None,
@@ -402,9 +380,9 @@ def get_rest_monitor(
 
             inner_response = None
 
-            def _inner_mona_export(is_exception):
-                return mona_export_function(
-                    _get_mona_single_message(
+            def _inner_log_message(is_exception):
+                return message_logging_function(
+                    _get_logging_message(
                         api_name=openai_endpoint_name,
                         request_input=request_dict,
                         start_time=start_time,
@@ -414,16 +392,15 @@ def get_rest_monitor(
                         stream_start_time=None,
                         response=inner_response,
                         analysis_getter=wrapping_logic.get_full_analysis,
-                        context_class=context_class,
                         message_cleaner=wrapping_logic.get_clean_message,
-                        additional_data=additional_data,
-                        context_id=context_id,
-                        export_timestamp=export_timestamp,
-                    )
+                        additional_data=additional_data
+                    ),
+                    context_id,
+                    export_timestamp
                 )
 
-            mona_export = add_conditional_sampling(
-                _inner_mona_export, sampling_ratio
+            log_message = add_conditional_sampling(
+                _inner_log_message, sampling_ratio
             )
 
             def log_response(response):
@@ -436,10 +413,10 @@ def get_rest_monitor(
                 """
                 nonlocal inner_response
                 inner_response = response
-                return mona_export(False)
+                return log_message(False)
 
             def log_exception():
-                return mona_export(True)
+                return log_message(True)
 
             return log_response, log_exception
 
@@ -466,7 +443,7 @@ def get_rest_monitor(
             returned callbacks is called.
             """
             return cls._inner_log_request(
-                client.export,
+                logger.log,
                 request_dict,
                 additional_data,
                 context_id,
@@ -486,24 +463,20 @@ def get_rest_monitor(
             details.
             """
             return cls._inner_log_request(
-                async_client.export_async,
+                logger.alog,
                 request_dict,
                 additional_data,
                 context_id,
                 export_timestamp,
             )
 
-        @classmethod
-        def get_mona_clients(cls):
-            """
-            Returns the two Mona client this class works with to allow
-            exporting more data or communicating directly with Mona's
-            API.
-            """
-            return client, async_client
-
     return RestClient
 
+def _validate_langchain_llm(llm):
+    if not hasattr(llm, "client"):
+        raise InvalidLagnchainLLMException(
+            "LLM has no client attribute - must be an OpenAI LLM"
+        )
 
 def monitor_langchain_llm(
     llm,
@@ -512,11 +485,26 @@ def monitor_langchain_llm(
     specs=EMPTY_DICT,
     mona_clients_getter=get_mona_clients,
 ):
-    if not hasattr(llm, "client"):
-        raise InvalidLagnchainLLMException(
-            "LLM has no client attribute - must be an OpenAI LLM"
-        )
+    """
+    Wraps given llm with automatic mona-monitoring logic.
+    """
+    _validate_langchain_llm(llm)
     llm.client = monitor(
         llm.client, mona_creds, context_class, specs, mona_clients_getter
+    )
+    return llm
+
+def monitor_langchain_llm_with_logger(
+    llm,
+    logger,
+    specs=EMPTY_DICT
+):
+    """
+    Wraps given llm with monitoring logic, logging the analysis with the given
+    logger.
+    """
+    _validate_langchain_llm(llm)
+    llm.client = monitor(
+        llm.client, logger, specs
     )
     return llm
