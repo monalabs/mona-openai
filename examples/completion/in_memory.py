@@ -1,24 +1,15 @@
 from os import environ
 import openai
+from mona_openai.loggers import InMemoryLogger
 
-from mona_openai import monitor
+from mona_openai import monitor_with_logger
 
 openai.api_key = environ.get("OPEN_AI_KEY")
 
-MONA_API_KEY = environ.get("MONA_API_KEY")
-MONA_SECRET = environ.get("MONA_SECRET")
-MONA_CREDS = {
-    "key": MONA_API_KEY,
-    "secret": MONA_SECRET,
-}
-
-# This is the name of the monitoring class on Mona
-CONTEXT_CLASS_NAME = "MONITORED_COMPLETION_USE_CASE_NAME"
-
-monitored_completion = monitor(
+logger = InMemoryLogger()
+monitored_completion = monitor_with_logger(
     openai.Completion,
-    MONA_CREDS,
-    CONTEXT_CLASS_NAME,
+    logger,
 )
 
 response = monitored_completion.create(
@@ -31,4 +22,5 @@ response = monitored_completion.create(
     # internal OpenAI call.
     MONA_additional_data={"customer_id": "A531251"},
 )
-print(response.choices[0].text)
+
+print(logger.latest_messages)

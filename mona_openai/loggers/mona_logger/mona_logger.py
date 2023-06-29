@@ -3,10 +3,14 @@ from mona_sdk import MonaSingleMessage
 from .mona_client import get_mona_clients
 import logging
 
-class MonaLogger(Logger):
 
-    def __init__(self, mona_creds,
-    context_class,mona_clients_getter=get_mona_clients,):
+class MonaLogger(Logger):
+    def __init__(
+        self,
+        mona_creds,
+        context_class,
+        mona_clients_getter=get_mona_clients,
+    ):
         self.client, self.async_client = mona_clients_getter(mona_creds)
         self.context_class = context_class
 
@@ -32,18 +36,27 @@ class MonaLogger(Logger):
         return response
 
     def log(self, message, context_id, export_timestamp):
-        return self.client.export(MonaSingleMessage(
-            message=message,
-            contextClass=self.context_class,
-            contextId=context_id,
-            exportTimestamp=export_timestamp,
-        ))
-    
+        """
+        Logs the given message to Mona.
+        """
+        return self.client.export(
+            MonaSingleMessage(
+                message=message,
+                contextClass=self.context_class,
+                contextId=context_id,
+                exportTimestamp=export_timestamp,
+            )
+        )
+
     async def alog(self, message, context_id, export_timestamp):
-        return self.async_client.export_async(MonaSingleMessage(
-            message=message,
-            contextClass=self.context_class,
-            contextId=context_id,
-            exportTimestamp=export_timestamp,
-        ))
-        
+        """
+        Async logs the given message to Mona.
+        """
+        return await self.async_client.export_async(
+            MonaSingleMessage(
+                message=message,
+                contextClass=self.context_class,
+                contextId=context_id,
+                exportTimestamp=export_timestamp,
+            )
+        )

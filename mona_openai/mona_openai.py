@@ -3,8 +3,6 @@ from .loggers.mona_logger.mona_logger import MonaLogger
 from copy import deepcopy
 from types import MappingProxyType
 
-from mona_sdk import MonaSingleMessage
-
 from .exceptions import InvalidLagnchainLLMException
 from .endpoints.wrapping_getter import get_endpoint_wrapping
 from .loggers.mona_logger.mona_client import get_mona_clients
@@ -25,7 +23,9 @@ CONTEXT_ID_ARG_NAME = MONA_ARGS_PREFIX + "context_id"
 EXPORT_TIMESTAMP_ARG_NAME = MONA_ARGS_PREFIX + "export_timestamp"
 ADDITIONAL_DATA_ARG_NAME = MONA_ARGS_PREFIX + "additional_data"
 
-def _get_logging_message(api_name,
+
+def _get_logging_message(
+    api_name,
     request_input,
     start_time,
     is_exception,
@@ -37,8 +37,8 @@ def _get_logging_message(api_name,
     additional_data,
 ):
     """
-    Returns a MonaSingleMessage object to be used for data
-    exporting to Mona's servers by a Mona client.
+    Returns a dict object containing all the monitoring analysis to be used
+    for data logging.
     """
 
     message = {
@@ -88,13 +88,14 @@ def monitor(
             sampling ratio.
         mona_clients_getter: Used only for testing purposes.
     """
-    return monitor_with_logger(openai_class, MonaLogger(mona_creds, context_class, mona_clients_getter), specs)
-
-def monitor_with_logger(
+    return monitor_with_logger(
         openai_class,
-        logger,
-        specs
-):
+        MonaLogger(mona_creds, context_class, mona_clients_getter),
+        specs,
+    )
+
+
+def monitor_with_logger(openai_class, logger, specs=EMPTY_DICT):
     """
     Returns a Wrapped version of a given OpenAI class with monitoring logic.
 
@@ -107,7 +108,7 @@ def monitor_with_logger(
     endpoint parameter usage (e.g., it tracks the "temperature" and
     "max_tokens" params you use).
 
-    The logic for what to do with the calculated analysis data is set by the 
+    The logic for what to do with the calculated analysis data is set by the
     given logger object.
 
     You can also add other named args when calling "create" or
@@ -127,7 +128,7 @@ def monitor_with_logger(
         MONA_export_timestamp: Can be used to simulate as if the
             current call was made in a different time, as far as Mona
             is concerned.
-    
+
     Args:
         openai_class: An OpenAI API class to wrap with monitoring
             capabilties.
@@ -149,7 +150,7 @@ def monitor_with_logger(
 
     class MonitoredOpenAI(base_class):
         """
-        A mona-monitored version of an openai API class.
+        A monitored version of an openai API class.
         """
 
         @classmethod
@@ -193,8 +194,8 @@ def monitor_with_logger(
             cls, export_function, super_function, args, kwargs
         ):
             """
-            The main logic for wrapping create functions with mona data
-            exporting.
+            The main logic for wrapping create functions with monitoring data
+            logging.
             This internal function porovides a template for both sync
             and async activations (helps with wrapping both "create"
             and "acreate").
@@ -221,11 +222,10 @@ def monitor_with_logger(
                             response,
                         ),
                         kwargs.get(
-                            CONTEXT_ID_ARG_NAME, response["id"] if response else None
+                            CONTEXT_ID_ARG_NAME,
+                            response["id"] if response else None,
                         ),
-                        kwargs.get(
-                            EXPORT_TIMESTAMP_ARG_NAME, start_time
-                        ),
+                        kwargs.get(EXPORT_TIMESTAMP_ARG_NAME, start_time),
                     ),
                 )
 
@@ -303,7 +303,7 @@ def monitor_with_logger(
         @classmethod
         def create(cls, *args, **kwargs):
             """
-            A mona-monitored version of the openai base class' "create"
+            A monitored version of the openai base class' "create"
             function.
             """
             return run_in_an_event_loop(
@@ -313,15 +313,15 @@ def monitor_with_logger(
         @classmethod
         async def acreate(cls, *args, **kwargs):
             """
-            An async mona-monitored version of the openai base class'
+            An async monitored version of the openai base class'
             "acreate" function.
             """
             return await cls._inner_create(
                 logger.alog, super().acreate, args, kwargs
             )
 
-
     return type(base_class.__name__, (MonitoredOpenAI,), {})
+
 
 def get_rest_monitor(
     openai_endpoint_name,
@@ -334,14 +334,18 @@ def get_rest_monitor(
     A wrapper around get_rest_monitor_with_logger that automatically uses
     a Mona logger.
     """
-    return get_rest_monitor_with_logger(openai_endpoint_name, MonaLogger(mona_creds, context_class, mona_clients_getter), specs)
+    return get_rest_monitor_with_logger(
+        openai_endpoint_name,
+        MonaLogger(mona_creds, context_class, mona_clients_getter),
+        specs,
+    )
 
 
 def get_rest_monitor_with_logger(
     # TODO(itai): Consider understanding endpoint name from complete url.
     openai_endpoint_name,
     logger,
-    specs=EMPTY_DICT
+    specs=EMPTY_DICT,
 ):
     """
     Returns a client class for monitoring OpenAI REST calls not done
@@ -359,7 +363,7 @@ def get_rest_monitor_with_logger(
 
     class RestClient:
         """
-        This will be the returned Mona logging class. We follow
+        This will be the returned monitoring class. We follow
         OpenAI's way of doing things by using a static classe with
         relevant class methods.
         """
@@ -393,10 +397,10 @@ def get_rest_monitor_with_logger(
                         response=inner_response,
                         analysis_getter=wrapping_logic.get_full_analysis,
                         message_cleaner=wrapping_logic.get_clean_message,
-                        additional_data=additional_data
+                        additional_data=additional_data,
                     ),
                     context_id,
-                    export_timestamp
+                    export_timestamp,
                 )
 
             log_message = add_conditional_sampling(
@@ -406,7 +410,7 @@ def get_rest_monitor_with_logger(
             def log_response(response):
                 """
                 Only when this function is called, will data be logged
-                out to Mona. This function should be called with a
+                out. This function should be called with a
                 response object from the OpenAI API as close as
                 possible to when it is received to allow accurate
                 latency logging.
@@ -429,7 +433,7 @@ def get_rest_monitor_with_logger(
             export_timestamp=None,
         ):
             """
-            Sets up mona logging for OpenAI request/response objects.
+            Sets up logging for OpenAI request/response objects.
 
             This function should be called with a request data dict,
             for example, what you would use as "json" when using
@@ -439,7 +443,7 @@ def get_rest_monitor_with_logger(
             response object, as well as an exception logging function in case
             of exceptions.
 
-            Note that this call does not log anything to Mona until one of the
+            Note that this call does not log anything until one of the
             returned callbacks is called.
             """
             return cls._inner_log_request(
@@ -472,11 +476,13 @@ def get_rest_monitor_with_logger(
 
     return RestClient
 
+
 def _validate_langchain_llm(llm):
     if not hasattr(llm, "client"):
         raise InvalidLagnchainLLMException(
             "LLM has no client attribute - must be an OpenAI LLM"
         )
+
 
 def monitor_langchain_llm(
     llm,
@@ -494,17 +500,12 @@ def monitor_langchain_llm(
     )
     return llm
 
-def monitor_langchain_llm_with_logger(
-    llm,
-    logger,
-    specs=EMPTY_DICT
-):
+
+def monitor_langchain_llm_with_logger(llm, logger, specs=EMPTY_DICT):
     """
     Wraps given llm with monitoring logic, logging the analysis with the given
     logger.
     """
     _validate_langchain_llm(llm)
-    llm.client = monitor(
-        llm.client, logger, specs
-    )
+    llm.client = monitor(llm.client, logger, specs)
     return llm
