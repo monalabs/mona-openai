@@ -160,6 +160,8 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
                     messages_textual_analyzers
                 )
                 / analyzer.get_word_count()
+                if analyzer.get_word_count() > 0
+                else 0.0
                 for analyzer in answers_textual_analyzers
             ),
         }
