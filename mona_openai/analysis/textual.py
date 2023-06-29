@@ -112,7 +112,7 @@ class TextualAnalyzer:
         """
         return (
             self.get_preposition_count() / self.get_word_count()
-            if len(self._text)
+            if self.get_word_count()
             else 0
         )
 
