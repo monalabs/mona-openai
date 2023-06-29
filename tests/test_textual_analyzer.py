@@ -21,6 +21,11 @@ def test_get_preposition_ratio():
     assert TextualAnalyzer(text).get_preposition_ratio() == 2 / 6
 
 
+def test_get_preposition_ratio_no_words():
+    text = "  "
+    assert TextualAnalyzer(text).get_preposition_ratio() == 0
+
+
 def test_new_words():
     assert (
         TextualAnalyzer("this is a word").get_words_not_in_others_count(
