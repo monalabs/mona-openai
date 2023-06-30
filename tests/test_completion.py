@@ -77,7 +77,7 @@ _DEFAULT_ANALYSIS = {
         "prompt_phone_number_count": (0,),
         "answer_unknown_phone_number_count": (0,),
         "prompt_email_count": (0,),
-        "answer_unkown_email_count": (0,),
+        "answer_unknown_email_count": (0,),
     },
     "textual": {
         "prompt_length": (35,),
@@ -181,7 +181,7 @@ def test_multiple_prompts():
             "prompt_phone_number_count": (0, 0),
             "answer_unknown_phone_number_count": (0, 0),
             "prompt_email_count": (0, 0),
-            "answer_unkown_email_count": (0, 0),
+            "answer_unknown_email_count": (0, 0),
         },
         "textual": {
             "prompt_length": (35, 40),
@@ -459,7 +459,7 @@ def test_multiple_answers():
             "prompt_phone_number_count": (0,),
             "answer_unknown_phone_number_count": (0, 0, 0),
             "prompt_email_count": (0,),
-            "answer_unkown_email_count": (0, 0, 0),
+            "answer_unknown_email_count": (0, 0, 0),
         },
         "textual": {
             "prompt_length": (35,),
@@ -593,7 +593,7 @@ def test_stream_multiple_answers():
             "prompt_phone_number_count": (0,),
             "answer_unknown_phone_number_count": (0, 0),
             "prompt_email_count": (0,),
-            "answer_unkown_email_count": (0, 0),
+            "answer_unknown_email_count": (0, 0),
         },
         "textual": {
             "prompt_length": (35,),

@@ -111,11 +111,7 @@ class TextualAnalyzer:
         Returns the ratio of prepositions in the text.
         """
         word_count = self.get_word_count()
-        return (
-            self.get_preposition_count() / word_count
-            if word_count
-            else 0
-        )
+        return self.get_preposition_count() / word_count if word_count else 0
 
     def get_words_not_in_others_count(
         self, others: Iterable["TextualAnalyzer"]
