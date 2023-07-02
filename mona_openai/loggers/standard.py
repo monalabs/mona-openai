@@ -10,7 +10,7 @@ class StandardLogger(Logger):
 
     def __init__(
         self,
-        logging_level=None,
+        logging_level=INFO,
         underlying_logger=None,
     ):
         self.underlying_logger = underlying_logger or getLogger("Mona")

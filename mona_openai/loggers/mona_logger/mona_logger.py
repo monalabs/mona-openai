@@ -25,8 +25,8 @@ class MonaLogger(Logger):
         error_message = response.get("error_message")
         if error_message:
             logging.warning(
-                f"Problem initializing Mona context class '{self.context_class}':"
-                f" {error_message}"
+                f"Problem initializing Mona context class"
+                f" '{self.context_class}': {error_message}"
             )
         else:
             logging.info(

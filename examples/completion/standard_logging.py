@@ -7,7 +7,6 @@ from mona_openai import monitor_with_logger
 
 openai.api_key = environ.get("OPEN_AI_KEY")
 
-logger = StandardLogger()
 monitored_completion = monitor_with_logger(
     openai.Completion,
     StandardLogger(WARNING),
