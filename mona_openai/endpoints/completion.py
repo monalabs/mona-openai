@@ -81,7 +81,7 @@ class CompletionWrapping(OpenAIEndpointWrappingLogic):
                 )
             ),
             "prompt_email_count": combined_prompts.get_emails_count(),
-            "answer_unkown_email_count": (
+            "answer_unknown_email_count": (
                 combined_answers.get_previously_unseen_emails_count(
                     prompts_privacy_analyzers
                 )

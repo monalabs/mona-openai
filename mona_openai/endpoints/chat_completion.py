@@ -100,7 +100,7 @@ class ChatCompletionWrapping(OpenAIEndpointWrappingLogic):
             "total_prompt_email_count": sum(
                 combined_messages.get_emails_count()
             ),
-            "answer_unkown_email_count": (
+            "answer_unknown_email_count": (
                 combined_answers.get_previously_unseen_emails_count(
                     messages_privacy_analyzers
                 )
