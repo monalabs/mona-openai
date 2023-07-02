@@ -37,7 +37,7 @@ class Logger(metaclass=abc.ABCMeta):
         self, message: dict, context_id=None, export_timestamp=None
     ):
         """
-        Every child class must implement this basic function which gets a
-        dictionary to be logged.
+        Child classes should implement this async version of the "log"
+        function.
         """
         pass
