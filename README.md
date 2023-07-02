@@ -16,6 +16,7 @@ Use one line of code to get instant live monitoring for your OpenAI usage includ
 
 ## Setting Up
 
+TODO: Add part about Mona registration with a link to the relevant landing page where the reader can sign up.
 ```console
 $ pip install mona_openai
 ```
