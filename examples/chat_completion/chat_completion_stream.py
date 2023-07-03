@@ -30,7 +30,7 @@ response = monitored_chat_completion.create(
     max_tokens=20,
     n=1,
     temperature=0.2,
-    # Adding aditional information for monitoring purposes, unrelated to
+    # Adding additional information for monitoring purposes, unrelated to
     # internal OpenAI call.
     MONA_additional_data={"customer_id": "A531251"},
 )

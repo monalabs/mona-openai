@@ -16,22 +16,48 @@ Use one line of code to get instant live monitoring for your OpenAI usage includ
 
 ## Setting Up
 
-- TODO: Add part about Mona registration with a link to the relevant landing page where the reader can sign up.
 ```console
 $ pip install mona_openai
 ```
 
-## Quick Start and Example
+If you plan on using Mona as your monitoring service, [sign up for a free account here](https://www.monalabs.io/openai-gpt-monitoring).
 
-Example boilerplate code for both sync and async usage is given in the file "example_usage.py" and here:
+## Quick Start
+
+You can find boilerplate code for many use-cases under [the "examples" folder](https://github.com/monalabs/mona-openai/tree/main/examples).
+
 ```py
 from os import environ
 import asyncio
 import openai
+from mona_openai.loggers import StandardLogger
+from logging import WARNING
 
-from mona_openai import monitor
+from mona_openai import monitor, monitor_with_logger
 
 openai.api_key = environ.get("OPEN_AI_KEY")
+
+# When using a standard logger.
+
+monitored_completion = monitor_with_logger(
+    openai.Completion,
+    StandardLogger(WARNING),
+)
+
+response = monitored_completion.create(
+    model="text-ada-001",
+    prompt="I want to generate some text about ",
+    max_tokens=20,
+    n=1,
+    temperature=0.2,
+    # Adding additional information for monitoring purposes, unrelated to
+    # internal OpenAI call.
+    MONA_additional_data={"customer_id": "A531251"},
+)
+print(response.choices[0].text)
+
+
+# When monitoring with Mona.
 
 MONA_API_KEY = environ.get("MONA_API_KEY")
 MONA_SECRET = environ.get("MONA_SECRET")
@@ -48,34 +74,16 @@ monitored_completion = monitor(
     CONTEXT_CLASS_NAME,
 )
 
-
-prompt = "I want to generate some text about "
-model = "text-ada-001"
-temperature = 0.6
-max_tokens = 5
-n = 1
-
-# Regular (sync) usage
 response = monitored_completion.create(
-    engine=model,
-    prompt=prompt,
-    max_tokens=max_tokens,
-    n=n,
-    temperature=temperature,
+    model="text-ada-001",
+    prompt="I want to generate some text about ",
+    max_tokens=20,
+    n=1,
+    temperature=0.2,
+    # Adding additional information for monitoring purposes, unrelated to
+    # internal OpenAI call.
     MONA_additional_data={"customer_id": "A531251"},
 )
-print(response.choices[0].text)
-
-# Async usage
-response = asyncio.run(monitored_completion.acreate(
-    engine=model,
-    prompt=prompt,
-    max_tokens=max_tokens,
-    n=n,
-    temperature=temperature,
-    MONA_additional_data={"customer_id": "A531251"},
-))
-
 print(response.choices[0].text)
 ```
 ## Supported OpenAI APIs
@@ -124,6 +132,39 @@ The specs arg allows you to configure what should be monitored. It expects a pyt
 * export_prompt (False): Whether Mona should export the actual prompt text. Be default set to False to avoid privacy concerns.
 * export_response_texts (False): Whether Mona should export the actual response texts. Be default set to False to avoid privacy concerns.
 * analysis: A dictionary mapping each analysis type to a boolean value telling the client whether or not to run said analysis and log it to Mona. Possible options currently are "privacy", "profanity", and "textual". By default, all analyses take place and are logged out to Mona.
+
+### Using custom loggers
+You don't have to have a Mona account to use this package. You can define specific loggers to log out the data to a file, memory, or just a given python logger. For example, to log out the relevant metrics as WARNING:
+
+```py
+from os import environ
+import openai
+from mona_openai.loggers import StandardLogger
+from logging import WARNING
+
+from mona_openai import monitor_with_logger
+
+openai.api_key = environ.get("OPEN_AI_KEY")
+
+monitored_completion = monitor_with_logger(
+    openai.Completion,
+    StandardLogger(WARNING),
+)
+
+response = monitored_completion.create(
+    model="text-ada-001",
+    prompt="I want to generate some text about ",
+    max_tokens=20,
+    n=1,
+    temperature=0.2,
+    # Adding additional information for monitoring purposes, unrelated to
+    # internal OpenAI call.
+    MONA_additional_data={"customer_id": "A531251"},
+)
+```
+
+This SDK provides a simple interface to implement your own loggers by inheriting from Logger under loggers/logger.py.
+Alternatively, by using the standard python logging library as in the example, you can create logging handlers to log the data out to any mechanism you choose (e.g., Kafka, Logstash, etc...)
 
 ### Capabilities during API calls
 

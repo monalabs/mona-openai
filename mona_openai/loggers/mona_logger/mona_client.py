@@ -1,7 +1,7 @@
 from mona_sdk.client import Client
 from mona_sdk.async_client import AsyncClient
 
-from .exceptions import InvalidMonaCredsException
+from ...exceptions import InvalidMonaCredsException
 
 
 MONA_API_KEY_KEY = "key"
