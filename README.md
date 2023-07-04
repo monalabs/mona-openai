@@ -20,24 +20,21 @@ Use one line of code to get instant live monitoring for your OpenAI usage includ
 $ pip install mona_openai
 ```
 
-If you plan on using Mona as your monitoring service, [sign up for a free account here](https://www.monalabs.io/openai-gpt-monitoring).
-
 ## Quick Start
 
-You can find boilerplate code for many use-cases under [the "examples" folder](https://github.com/monalabs/mona-openai/tree/main/examples).
+You can find boilerplate code for many use cases under [the "examples" folder](https://github.com/monalabs/mona-openai/tree/main/examples).
+
+### With Standard Logging
 
 ```py
 from os import environ
-import asyncio
 import openai
 from mona_openai.loggers import StandardLogger
 from logging import WARNING
 
-from mona_openai import monitor, monitor_with_logger
+from mona_openai import monitor_with_logger
 
 openai.api_key = environ.get("OPEN_AI_KEY")
-
-# When using a standard logger.
 
 monitored_completion = monitor_with_logger(
     openai.Completion,
@@ -55,9 +52,19 @@ response = monitored_completion.create(
     MONA_additional_data={"customer_id": "A531251"},
 )
 print(response.choices[0].text)
+```
 
+### With Mona
 
-# When monitoring with Mona.
+[Sign up for a free Mona account here](https://www.monalabs.io/openai-gpt-monitoring).
+
+```py
+from os import environ
+import openai
+
+from mona_openai import monitor
+
+openai.api_key = environ.get("OPEN_AI_KEY")
 
 MONA_API_KEY = environ.get("MONA_API_KEY")
 MONA_SECRET = environ.get("MONA_SECRET")
@@ -86,6 +93,7 @@ response = monitored_completion.create(
 )
 print(response.choices[0].text)
 ```
+
 ## Supported OpenAI APIs
 Currently this client supports `openai.Completion` and `openai.ChatCompletion`. Mona can support processes based on other APIs and also non-OpenAI-based apps.
 If you have a differrent use-case, we'd love to hear about it! Please email us at support@monalabs.io.
