@@ -3,7 +3,7 @@
   <img src="https://github.com/monalabs/mona-sdk/blob/main/mona_logo.png?raw=true" alt="Mona's logo" width="180"/>
 </p>
 
-<p align="center"><a target="_blank" href="https://monalabs.wistia.com/medias/l6xmdj3cd6?wvideo=l6xmdj3cd6"><img src="https://embed-ssl.wistia.com/deliveries/c15bb616a389fa7d752968ccb3af2ab4.jpg?wistia-l6xmdj3cd6-1-l6xmdj3cd6-video-thumbnail=1&amp;image_play_button_size=2x&amp;image_crop_resized=960x540&amp;image_play_button=1&amp;image_play_button_color=66c7d1e0" width="400" height="225" style="width: 400px; height: 225px;"></a></p><p align="center"><a href="https://monalabs.wistia.com/medias/l6xmdj3cd6?wvideo=l6xmdj3cd6">OpenAI GPT Integration Tutorial</a></p>
+<p align="center"><a target="_blank" href="https://monalabs.wistia.com/medias/l6xmdj3cd6?wvideo=l6xmdj3cd6"><img src="https://embed-ssl.wistia.com/deliveries/c15bb616a389fa7d752968ccb3af2ab4.jpg?wistia-l6xmdj3cd6-1-l6xmdj3cd6-video-thumbnail=1&amp;image_play_button_size=2x&amp;image_crop_resized=960x540&amp;image_play_button=1&amp;image_play_button_color=66c7d1e0" width="400" height="225" style="width: 400px; height: 225px;"></a></p>
 
 
 Use one line of code to get instant live monitoring for your OpenAI usage including:
