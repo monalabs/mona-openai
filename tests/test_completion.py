@@ -231,6 +231,20 @@ def test_rest():
     ).log_request(_DEFAULT_INPUT)[0](_DEFAULT_RESPONSE)
 
 
+def test_rest_more_additional_data():
+    additional_data = {"foo": "bar"}
+    more_additional_data = {"foo2": "bar2"}
+    total_additional_data = {**additional_data, **more_additional_data}
+    get_rest_monitor(
+        Completion.__name__,
+        (),
+        _DEFAULT_CONTEXT_CLASS,
+        mona_clients_getter=get_mock_mona_clients_getter(
+            (_get_mona_message(additional_data=total_additional_data),), ()
+        ),
+    ).log_request(_DEFAULT_INPUT, additional_data=additional_data)[0](_DEFAULT_RESPONSE, additional_data=more_additional_data)
+
+
 def test_rest_async():
     asyncio.run(
         get_rest_monitor(
