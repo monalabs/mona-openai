@@ -242,7 +242,9 @@ def test_rest_more_additional_data():
         mona_clients_getter=get_mock_mona_clients_getter(
             (_get_mona_message(additional_data=total_additional_data),), ()
         ),
-    ).log_request(_DEFAULT_INPUT, additional_data=additional_data)[0](_DEFAULT_RESPONSE, additional_data=more_additional_data)
+    ).log_request(_DEFAULT_INPUT, additional_data=additional_data)[0](
+        _DEFAULT_RESPONSE, additional_data=more_additional_data
+    )
 
 
 def test_rest_async():

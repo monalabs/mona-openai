@@ -385,7 +385,9 @@ def get_rest_monitor_with_logger(
             if additional_data is None:
                 additional_data = EMPTY_DICT
 
-            def _inner_log_message(is_exception, more_additional_data, response=None):
+            def _inner_log_message(
+                is_exception, more_additional_data, response=None
+            ):
                 print("kfj;alsdkfgja", additional_data)
                 return message_logging_function(
                     _get_logging_message(
@@ -399,7 +401,10 @@ def get_rest_monitor_with_logger(
                         response=response,
                         analysis_getter=wrapping_logic.get_full_analysis,
                         message_cleaner=wrapping_logic.get_clean_message,
-                        additional_data={**additional_data, **more_additional_data},
+                        additional_data={
+                            **additional_data,
+                            **more_additional_data,
+                        },
                     ),
                     context_id,
                     export_timestamp,
@@ -417,7 +422,11 @@ def get_rest_monitor_with_logger(
                 possible to when it is received to allow accurate
                 latency logging.
                 """
-                return log_message(False, more_additional_data=additional_data, response=response)
+                return log_message(
+                    False,
+                    more_additional_data=additional_data,
+                    response=response,
+                )
 
             def log_exception(additional_data=EMPTY_DICT):
                 return log_message(True, more_additional_data=additional_data)

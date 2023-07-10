@@ -21,7 +21,6 @@ def run_in_an_event_loop(coroutine):
             # loop that we can run within the main loop.
             nest_asyncio.apply()
             return asyncio.run(coroutine)
-            
 
 
 EMPTY_DICT = MappingProxyType({})
