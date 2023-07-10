@@ -294,3 +294,7 @@ This package uses the mona_sdk package to export the relevant data to Mona. Ther
 ## Monitoring for profanity
 
 Mona uses the alt-profanity-check pacakge (https://pypi.org/project/alt-profanity-check/) to create both boolean predictions and probabilty scores for the existence of profanity both in the prompt and in the responses. We use the built in package methods for that. If you want, for example, to use a different probability threshold for the boolean prediction, you can do that by changing your Mona config on the Mona dashboard.
+
+## Using nest-asyncio
+
+In environments in which there's a forever running event loop (e.g., Jupyter notebooks), the client might use [nest_asyncio.apply()](https://pypi.org/project/nest-asyncio/) to run joint sync and async code.
