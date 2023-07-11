@@ -373,7 +373,7 @@ def get_rest_monitor_with_logger(
             cls,
             message_logging_function,
             request_dict,
-            additional_data=None,
+            additional_data=EMPTY_DICT,
             context_id=None,
             export_timestamp=None,
         ):
@@ -382,9 +382,12 @@ def get_rest_monitor_with_logger(
             """
             start_time = time.time()
 
-            inner_response = None
+            if additional_data is None:
+                additional_data = EMPTY_DICT
 
-            def _inner_log_message(is_exception):
+            def _inner_log_message(
+                is_exception, more_additional_data, response=None
+            ):
                 return message_logging_function(
                     _get_logging_message(
                         api_name=openai_endpoint_name,
@@ -394,10 +397,13 @@ def get_rest_monitor_with_logger(
                         is_async=False,
                         # TODO(itai): Support stream in REST as well.
                         stream_start_time=None,
-                        response=inner_response,
+                        response=response,
                         analysis_getter=wrapping_logic.get_full_analysis,
                         message_cleaner=wrapping_logic.get_clean_message,
-                        additional_data=additional_data,
+                        additional_data={
+                            **additional_data,
+                            **more_additional_data,
+                        },
                     ),
                     context_id,
                     export_timestamp,
@@ -407,7 +413,7 @@ def get_rest_monitor_with_logger(
                 _inner_log_message, sampling_ratio
             )
 
-            def log_response(response):
+            def log_response(response, additional_data=EMPTY_DICT):
                 """
                 Only when this function is called, will data be logged
                 out. This function should be called with a
@@ -415,12 +421,14 @@ def get_rest_monitor_with_logger(
                 possible to when it is received to allow accurate
                 latency logging.
                 """
-                nonlocal inner_response
-                inner_response = response
-                return log_message(False)
+                return log_message(
+                    False,
+                    more_additional_data=additional_data,
+                    response=response,
+                )
 
-            def log_exception():
-                return log_message(True)
+            def log_exception(additional_data=EMPTY_DICT):
+                return log_message(True, more_additional_data=additional_data)
 
             return log_response, log_exception
 

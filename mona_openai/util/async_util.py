@@ -1,3 +1,4 @@
+import nest_asyncio
 import asyncio
 from types import MappingProxyType
 from inspect import iscoroutinefunction
@@ -12,7 +13,14 @@ def run_in_an_event_loop(coroutine):
     try:
         return asyncio.run(coroutine)
     except RuntimeError:
-        return asyncio.get_event_loop().run_until_complete(coroutine)
+        try:
+            return asyncio.get_event_loop().run_until_complete(coroutine)
+        except RuntimeError:
+            # This happens in environments that already have an event loop
+            # that is "run forever". We therefor must allow a "nested" event
+            # loop that we can run within the main loop.
+            nest_asyncio.apply()
+            return asyncio.run(coroutine)
 
 
 EMPTY_DICT = MappingProxyType({})
