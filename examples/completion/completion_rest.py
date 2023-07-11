@@ -57,7 +57,7 @@ try:
     response.raise_for_status()
 
     # Log response to Mona
-    response_logger(response.json())
+    response_logger(response.json(), additional_data={"some_other_data": True})
     print(response.json()["choices"][0]["text"])
 
 except Exception:
