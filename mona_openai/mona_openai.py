@@ -388,7 +388,6 @@ def get_rest_monitor_with_logger(
             def _inner_log_message(
                 is_exception, more_additional_data, response=None
             ):
-                print("kfj;alsdkfgja", additional_data)
                 return message_logging_function(
                     _get_logging_message(
                         api_name=openai_endpoint_name,
